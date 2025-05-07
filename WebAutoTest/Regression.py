@@ -6,7 +6,7 @@ from datetime import datetime
 from progTest.screenshot import run as screenshot_run
 from progTest.ParsProshivka import get_device_info as version_run
 # import progTest.my_task  # пример для расширения обработчиков
-
+# h
 
 def load_device_configs(path='config.txt'):
     """
