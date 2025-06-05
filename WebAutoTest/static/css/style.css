@@ -1,0 +1,191 @@
+/* === ОБЩИЕ СТИЛИ === */
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f4f4;
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Шапка */
+header {
+  background: #000;
+  color: #fff;
+  padding: 10px 0;
+  text-align: center;
+  font-size: 1.5rem;
+}
+
+/* Контейнер всего содержимого */
+.container {
+  display: flex;
+  height: calc(100vh - 50px); /* минус шапка */
+  overflow: hidden;
+}
+
+/* === БОКОВОЕ МЕНЮ === */
+.sidebar {
+  width: 200px;
+  min-width: 180px;
+  max-width: 220px;
+  background: #fff;
+  border-right: 1px solid #ddd;
+  padding: 1rem;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.sidebar nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sidebar nav li + li {
+  margin-top: 0.8rem;
+}
+
+.sidebar nav a {
+  text-decoration: none;
+  color: #333;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.sidebar nav a:hover {
+  color: #007bff;
+  text-decoration: underline;
+}
+
+/* === ОСНОВНОЙ КОНТЕНТ === */
+main {
+  flex-grow: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+  background: #fdfdfd;
+  box-sizing: border-box;
+}
+
+/* === КНОПКИ === */
+button {
+  padding: 0.5rem 1rem;
+  border: none;
+  background: #0554b4;
+  color: white;
+  cursor: pointer;
+  border-radius: 4px;
+  margin-top: 0.5rem;
+  transition: background 0.2s;
+}
+
+button:hover {
+  background: #003e92;
+}
+
+/* === БЛОК ВЫВОДА === */
+#output {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #e9ecef;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  color: #212529;
+  white-space: pre-wrap;
+}
+
+/* === ЛОГИ: /logs === */
+#logs-container {
+  display: flex;
+  height: 80vh;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* Увеличенное боковое меню логов */
+#logs-container .sidebar {
+  width: 625px; /* 250 * 2.5 */
+  background: #fafafa;
+  border-right: 1px solid #ddd;
+  overflow-y: auto;
+  overflow-x: auto;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+#logs-container .sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#logs-container .sidebar li {
+  padding: 0.5em 0.8em;
+  margin-bottom: 0.2em;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.2s;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: initial;
+  word-break: break-all;
+}
+
+#logs-container .sidebar li:hover {
+  background: #e6f7ff;
+}
+
+#logs-container .sidebar li[title] {
+  overflow: visible;
+}
+
+/* Отображение логов */
+.viewer {
+  flex: 1;
+  padding: 1rem;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.viewer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+#file-content {
+  flex: 1;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 1em;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  font-family: monospace;
+  font-size: 0.9em;
+}
+
+/* Кнопка "Скачать" */
+#download-btn {
+  padding: 0.4em 0.8em;
+  font-size: 0.9em;
+  border: none;
+  border-radius: 4px;
+  background: #007bff;
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+#download-btn:disabled {
+  background: #aaa;
+  cursor: default;
+}
+
+#download-btn:not(:disabled):hover {
+  background: #0056b3;
+}

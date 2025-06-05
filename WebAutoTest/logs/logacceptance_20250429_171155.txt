@@ -1,0 +1,143 @@
+IP_CAMERA=192.168.0.245:85 LOGIN=admin PASSWORD=123456 TIME=123
+Info: MAC: 50:62:55:02:2c:00
+Железо:
+        Процессор: gk7205v200
+        Семейство: gk7205v200
+        Сенсор: imx307_i2c
+        Флэш-память: 16 MB
+        Вариант устройства: T3P-35M Silver
+(MB_V0.0.9_A15
+KB_V0.0.8_A1
+Antena_SMALL_v0.0.4)
+Прошивка:
+        Сборка: local+build, 2025-03-20
+        Majestic: master+c2c2b32, 2025-01-13
+        Web UI: bundled
+        U-Boot: 
+        UICL: 0.5.0
+        MCU: 0.0.86
+        Ядро: 2024093012
+        RootFS: 2.5.03.20
+screenshot: True
+Время выполнения (сек): 0.83
+Текущее время: 2025-04-29 17:11:48
+
+IP_CAMERA=192.168.0.237:85 LOGIN=admin PASSWORD=123456 TIME=321
+Info: MAC: 50:62:55:02:0c:00
+Железо:
+        Процессор: gk7205v200
+        Семейство: gk7205v200
+        Сенсор: imx307_i2c
+        Флэш-память: 16 MB
+        Вариант устройства: T4P-16 Silver
+(MB_V0.0.16_A1
+KB_V0.0.10_A1
+Antena_SMALL_v0.0.4)
+Прошивка:
+        Сборка: local+build, 2024-12-26
+        Majestic: master+e1e5c74, 2024-10-26
+        Web UI: bundled
+        U-Boot: 
+        UICL: 0.4.14
+        MCU: 0.0.86
+        Ядро: 2024093012
+        RootFS: 2.4.12.26
+screenshot: True
+Время выполнения (сек): 0.73
+Текущее время: 2025-04-29 17:11:48
+
+IP_CAMERA=192.168.0.237:85 LOGIN=admin PASSWORD=123456 TIME=321
+Info: MAC: 50:62:55:02:0c:00
+Железо:
+        Процессор: gk7205v200
+        Семейство: gk7205v200
+        Сенсор: imx307_i2c
+        Флэш-память: 16 MB
+        Вариант устройства: T4P-16 Silver
+(MB_V0.0.16_A1
+KB_V0.0.10_A1
+Antena_SMALL_v0.0.4)
+Прошивка:
+        Сборка: local+build, 2024-12-26
+        Majestic: master+e1e5c74, 2024-10-26
+        Web UI: bundled
+        U-Boot: 
+        UICL: 0.4.14
+        MCU: 0.0.86
+        Ядро: 2024093012
+        RootFS: 2.4.12.26
+screenshot: False
+Время выполнения (сек): 7.62
+Текущее время: 2025-04-29 17:11:55
+
+IP_CAMERA=192.168.0.237:85 LOGIN=admin PASSWORD=123456 TIME=321
+Info: MAC: 50:62:55:02:0c:00
+Железо:
+        Процессор: gk7205v200
+        Семейство: gk7205v200
+        Сенсор: imx307_i2c
+        Флэш-память: 16 MB
+        Вариант устройства: T4P-16 Silver
+(MB_V0.0.16_A1
+KB_V0.0.10_A1
+Antena_SMALL_v0.0.4)
+Прошивка:
+        Сборка: local+build, 2024-12-26
+        Majestic: master+e1e5c74, 2024-10-26
+        Web UI: bundled
+        U-Boot: 
+        UICL: 0.4.14
+        MCU: 0.0.86
+        Ядро: 2024093012
+        RootFS: 2.4.12.26
+screenshot: False
+Время выполнения (сек): 7.86
+Текущее время: 2025-04-29 17:11:55
+
+IP_CAMERA=192.168.0.237:85 LOGIN=admin PASSWORD=123456 TIME=321
+Info: MAC: 50:62:55:02:0c:00
+Железо:
+        Процессор: gk7205v200
+        Семейство: gk7205v200
+        Сенсор: imx307_i2c
+        Флэш-память: 16 MB
+        Вариант устройства: T4P-16 Silver
+(MB_V0.0.16_A1
+KB_V0.0.10_A1
+Antena_SMALL_v0.0.4)
+Прошивка:
+        Сборка: local+build, 2024-12-26
+        Majestic: master+e1e5c74, 2024-10-26
+        Web UI: bundled
+        U-Boot: 
+        UICL: 0.4.14
+        MCU: 0.0.86
+        Ядро: 2024093012
+        RootFS: 2.4.12.26
+screenshot: False
+Время выполнения (сек): 7.6
+Текущее время: 2025-04-29 17:11:55
+
+IP_CAMERA=192.168.0.237:85 LOGIN=admin PASSWORD=123456 TIME=321
+Info: MAC: 50:62:55:02:0c:00
+Железо:
+        Процессор: gk7205v200
+        Семейство: gk7205v200
+        Сенсор: imx307_i2c
+        Флэш-память: 16 MB
+        Вариант устройства: T4P-16 Silver
+(MB_V0.0.16_A1
+KB_V0.0.10_A1
+Antena_SMALL_v0.0.4)
+Прошивка:
+        Сборка: local+build, 2024-12-26
+        Majestic: master+e1e5c74, 2024-10-26
+        Web UI: bundled
+        U-Boot: 
+        UICL: 0.4.14
+        MCU: 0.0.86
+        Ядро: 2024093012
+        RootFS: 2.4.12.26
+screenshot: False
+Время выполнения (сек): 7.93
+Текущее время: 2025-04-29 17:11:55
