@@ -1,0 +1,361 @@
+/* ========== ОСНОВНЫЕ СТИЛИ ========== */
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f4f4;
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ========== ШАПКА ========== */
+header {
+  background: #000;
+  color: #fff;
+  padding: 4px 0;
+  text-align: center;
+  font-size: 1rem;
+}
+
+/* ========== ОСНОВНОЙ КОНТЕЙНЕР ========== */
+.container {
+  display: flex;
+  height: calc(100vh - 50px); /* Учитываем высоту шапки */
+  overflow: hidden;
+}
+
+/* ========== БОКОВОЕ МЕНЮ ========== */
+.sidebar {
+  width: 200px;
+  min-width: 180px;
+  max-width: 220px;
+  background: #fff;
+  border-right: 1px solid #ddd;
+  padding: 1rem;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.sidebar nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sidebar nav li + li {
+  margin-top: 0.8rem;
+}
+
+.sidebar nav a {
+  text-decoration: none;
+  color: #333;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.sidebar nav a:hover {
+  color: #007bff;
+  text-decoration: underline;
+}
+
+/* ========== ОСНОВНОЙ КОНТЕНТ ========== */
+main {
+  flex-grow: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+  background: #fdfdfd;
+  box-sizing: border-box;
+}
+
+/* ========== КНОПКИ ========== */
+/* ========== КНОПКИ (унифицированный стиль) ========== */
+button {
+  font-size: 1.1rem;
+  padding: 0.6rem 1.4rem;
+  border: none;
+  border-radius: 4px;
+  background-color: #004dd1;
+  color: white;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+button:hover {
+  background-color: #005fff;
+  box-shadow: 0 0 10px rgba(0, 123, 255, 0.6);
+}
+
+button:focus {
+  outline: none;
+  background-color: rgb(1, 37, 194);
+  box-shadow: 0 0 0 3px rgba(0, 77, 209, 0.5);
+}
+
+button:disabled {
+  background-color: #999;
+  color: #eee;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+
+/* ========== БЛОК ВЫВОДА ========== */
+#output {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #e9ecef;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  color: #212529;
+  white-space: pre-wrap;
+}
+
+
+
+#logs-container {
+  display: flex;
+  height: 80vh;
+  min-height: 0; /* Важно для фиксированных размеров */
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Боковая панель логов */
+#logs-container .log-sidebar {
+  width: 400px;
+  background: #fafafa;
+  border-right: 1px solid #ddd;
+  overflow-y: auto;
+  overflow-x: auto;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+#logs-container .log-sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#logs-container .log-sidebar li {
+  padding: 0.5em 0.8em;
+  margin-bottom: 0.2em;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.2s;
+  word-break: break-all;
+  white-space: normal;
+}
+
+#logs-container .log-sidebar li:hover {
+  background: #e6f7ff;
+}
+
+/* Область просмотра логов (FIXED VERSION) */
+.viewer {
+  flex: 1;
+  padding: 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* Критически важно */
+  height: 100%; /* Фиксированная высота */
+  overflow: hidden; /* Скрываем переполнение */
+}
+
+.viewer-header {
+  flex-shrink: 0; /* Фиксированный размер заголовка */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+#file-content {
+  flex: 1;
+  min-height: 0; /* Критически важно */
+  overflow: auto; /* Прокрутка внутри контента */
+  background: #f3f3f3;
+  color: #000000;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 1rem;
+  white-space: pre;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+  line-height: 1.4;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
+}
+
+/* Стилизация скроллбара */
+#file-content::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+#file-content::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 4px;
+}
+
+/* Кнопка "Скачать" */
+.logsbutton {
+  padding: 0.4em 0.8em;
+  font-size: 0.9em;
+  border: none;
+  border-radius: 4px;
+  background: #007bff;
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.logsbutton:disabled {
+  background: #aaa;
+  cursor: default;
+}
+
+.logsbutton:not(:disabled):hover {
+  background: #0056b3;
+}
+
+/* Изображения внутри логов */
+#file-content img {
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+}
+
+/* Группы логов */
+.log-group {
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background-color: #f5faff;
+  border: 1px solid #d3e4f1;
+  border-radius: 6px;
+}
+
+.log-group h3 {
+  margin-top: 0;
+  font-size: 1rem;
+  color: #0554b4;
+  border-bottom: 1px dashed #b3d4f1;
+  padding-bottom: 0.3rem;
+  margin-bottom: 0.8rem;
+}
+
+/* Списки логов */
+.log-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.log-list li {
+  padding: 0.5em 0.8em;
+  margin-bottom: 0.2em;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.2s;
+  word-break: break-all;
+  white-space: normal;
+}
+
+.log-list li:hover {
+  background: #e6f7ff;
+}
+
+/* Фильтры */
+#filters {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  background: #eef6ff;
+  padding: 0.5rem;
+  border: 1px dashed #a3c9f7;
+  border-radius: 6px;
+}
+
+#filters label {
+  display: block;
+  margin-bottom: 0.3rem;
+  cursor: pointer;
+}
+
+/* ========== ПРОГРЕСС-БАР ========== */
+#progressBar {
+  background-color: #f3f3f3;
+  border-radius: 9px;
+  width: 80%;
+  height: 14px;
+}
+
+/* Стили для Chrome/Safari */
+progress::-webkit-progress-value {
+  background-color: #004dd1;
+  border-radius: 8px;
+}
+
+progress::-webkit-progress-bar {
+  background-color: #f3f3f3;
+  border-radius: 8px;
+}
+
+/* ========== АДАПТИВНОСТЬ ========== */
+/* Для экранов меньше 1000px */
+@media (max-width: 1000px) {
+  #logs-container {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .log-sidebar {
+    width: 100% !important;
+    max-width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #ccc;
+  }
+
+  .viewer {
+    width: 100%;
+    padding: 1rem;
+  }
+}
+
+/* Для экранов меньше 768px */
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    max-width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #ccc;
+  }
+
+  main {
+    padding: 1rem;
+  }
+}
+
+/* Для экранов меньше 480px */
+@media (max-width: 480px) {
+  button, #download-btn {
+    width: 100%;
+    font-size: 1rem;
+    padding: 0.8rem;
+  }
+
+  .viewer-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}

@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Прошивки</h2>
+
+<div class="firmware-container">
+  <!-- Левый блок: версии -->
+  <aside class="sidebarversion">
+    <div class="log-group">
+      <h3>🔢 Версии</h3>
+      <div class="log-group">
+        <input type="text" id="new-version-input" placeholder="Новая версия" />
+        <button id="create-version-btn">Создать версию</button>
+      </div>
+      <ul id="version-list" class="log-list">
+        <li>Загрузка...</li>
+      </ul>
+    </div>
+  </aside>
+
+  <!-- Правый блок -->
+  <main class="content">
+    <!-- Панель просмотра -->
+    <div class="viewer">
+      <div class="viewer-header">
+        <div>
+          <h3 id="current-file">Выберите файл</h3>
+          <pre id="file-info">Информация о файле появится здесь...</pre>
+        </div>
+        <div>
+          <button id="download-btn" disabled>Скачать</button>
+          <button id="delete-btn" disabled style="background:#dc3545;">Удалить</button>
+        </div>
+      </div>
+      <!-- Новый блок для превью изображения -->
+      <div class="viewer-body">
+        <img id="image-preview" alt="Preview" />
+      </div>
+    </div>
+
+    <!-- Список файлов -->
+    <div class="log-group">
+      <h3>📄 Файлы</h3>
+      <ul id="file-list" class="log-list">
+        <li>Выберите версию</li>
+      </ul>
+    </div>
+
+    <!-- Загрузка (без select) -->
+    <div class="log-group">
+      <h3>📤 Загрузить в версию</h3>
+      <input type="file" id="upload-file" />
+      <button id="upload-btn">Загрузить</button>
+    </div>
+  </main>
+</div>
+
+<style>
+.firmware-container {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.sidebarversion {
+  width: 250px;
+}
+
+.log-list li.active {
+  background-color: #e0f7fa;
+}
+
+.viewer {
+  margin-bottom: 20px;
+}
+
+.viewer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.viewer-body {
+  margin-top: 10px;
+  /* изначально скрываем картинку */
+}
+
+#image-preview {
+  display: none;
+  max-width: 100%;
+  max-height: 400px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const versionList    = document.getElementById('version-list');
+  const fileList       = document.getElementById('file-list');
+  const uploadInput    = document.getElementById('upload-file');
+  const uploadBtn      = document.getElementById('upload-btn');
+  const newVersionInput= document.getElementById('new-version-input');
+  const createVersionBtn = document.getElementById('create-version-btn');
+  const currentFileTitle = document.getElementById('current-file');
+  const fileInfo       = document.getElementById('file-info');
+  const downloadBtn    = document.getElementById('download-btn');
+  const deleteBtn      = document.getElementById('delete-btn');
+  const imagePreview   = document.getElementById('image-preview');
+
+  let currentVersion = null;
+  let currentFile    = null;
+
+  function loadVersions() {
+    fetch('/api/firmware/versions')
+      .then(r => r.json())
+      .then(data => {
+        versionList.innerHTML = '';
+        data.versions.forEach(v => {
+          const li = document.createElement('li');
+          li.textContent = v;
+          li.addEventListener('click', () => {
+            versionList.querySelectorAll('li').forEach(el => el.classList.remove('active'));
+            li.classList.add('active');
+            loadFiles(v);
+          });
+          versionList.appendChild(li);
+        });
+        if (!data.versions.length) {
+          versionList.innerHTML = '<li>Нет версий</li>';
+        }
+      });
+  }
+
+  createVersionBtn.addEventListener('click', () => {
+    const v = newVersionInput.value.trim();
+    if (!v) return alert('Введите имя версии');
+    fetch('/api/firmware/versions/create', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({version: v})
+    })
+    .then(r => r.json().then(body => ({ok: r.ok, body})))
+    .then(({ok, body}) => {
+      if (ok) {
+        alert('Создана версия ' + body.version);
+        newVersionInput.value = '';
+        loadVersions();
+      } else {
+        alert(body.error);
+      }
+    });
+  });
+
+  function loadFiles(version) {
+    currentVersion = version;
+    currentFileTitle.textContent = 'Выберите файл';
+    fileInfo.textContent = '';
+    downloadBtn.disabled = true;
+    deleteBtn.disabled = true;
+    imagePreview.style.display = 'none';
+
+    fetch(`/api/firmware/${encodeURIComponent(version)}`)
+      .then(r => r.json())
+      .then(data => {
+        fileList.innerHTML = '';
+        data.files.forEach(f => {
+          const li = document.createElement('li');
+          li.textContent = f;
+          li.addEventListener('click', () => selectFile(f));
+          fileList.appendChild(li);
+        });
+        if (!data.files.length) {
+          fileList.innerHTML = '<li>Нет файлов</li>';
+        }
+      });
+  }
+
+  function selectFile(filename) {
+    currentFile = filename;
+    currentFileTitle.textContent = filename;
+    fileInfo.textContent = `Версия: ${currentVersion}\nФайл: ${filename}`;
+    downloadBtn.disabled = false;
+    deleteBtn.disabled = false;
+
+    // Показываем превью, если PNG
+    if (filename.toLowerCase().endsWith('.png')) {
+      imagePreview.src = `/firmware/${encodeURIComponent(currentVersion)}/${encodeURIComponent(filename)}`;
+      imagePreview.style.display = 'block';
+    } else {
+      imagePreview.style.display = 'none';
+    }
+  }
+
+  downloadBtn.addEventListener('click', () => {
+    if (currentVersion && currentFile) {
+      window.location.href =
+        `/firmware/${encodeURIComponent(currentVersion)}/${encodeURIComponent(currentFile)}`;
+    }
+  });
+
+  deleteBtn.addEventListener('click', () => {
+    if (!confirm(`Удалить ${currentFile}?`)) return;
+    fetch(
+      `/api/firmware/${encodeURIComponent(currentVersion)}/delete/${encodeURIComponent(currentFile)}`, 
+      { method: 'DELETE' }
+    )
+    .then(r => r.json())
+    .then(res => {
+      if (res.success) {
+        alert('Удалено');
+        loadFiles(currentVersion);
+      } else {
+        alert(res.error);
+      }
+    });
+  });
+
+  uploadBtn.addEventListener('click', () => {
+    if (!currentVersion) return alert('Сначала выберите версию');
+    const file = uploadInput.files[0];
+    if (!file) return alert('Выберите файл');
+    const form = new FormData();
+    form.append('file', file);
+
+    fetch(`/api/firmware/${encodeURIComponent(currentVersion)}/upload`, {
+      method: 'POST',
+      body: form
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.success) {
+        alert('Загружено: ' + res.filename);
+        loadFiles(currentVersion);
+      } else {
+        alert(res.error);
+      }
+    });
+  });
+
+  // Инициализация
+  loadVersions();
+});
+</script>
+
+{% endblock %}

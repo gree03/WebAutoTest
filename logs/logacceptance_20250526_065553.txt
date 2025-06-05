@@ -1,0 +1,5 @@
+IP_CAMERA=192.168.0.155:85 LOGIN=admin PASSWORD=123456
+Info: Не удалось подключиться к устройству: 401 Client Error: Unauthorized for url: http://192.168.0.155:85/cgi-bin/status.cgi
+screenshot: True
+Время выполнения (сек): 0.26
+Текущее время: 2025-05-26 06:55:53

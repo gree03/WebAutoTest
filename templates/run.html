@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>Запуск</h2>
+
+  <!-- Контейнер с кнопками: Start1 & Start2 слева, Result справа -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <div>
+      <button id="start1Btn">Базовый</button>
+      <button id="start2Btn" style="margin-left: 20px;">Полный</button>
+      <button id="start3Btn" style="margin-left: 20px;">Тест прошивки</button>
+    </div>
+    <button id="resultBtn">Результат</button>
+  </div>
+
+  <!-- Полоса прогресса (общая для всех трёх) -->
+  <div style="margin-top:1rem">
+    <label for="progressBar"></label>
+    <progress id="progressBar" max="100" value="0" style="width:100%"></progress>
+  </div>
+
+  <!-- Блок для вывода результата -->
+  <div id="output" style="white-space: pre-line; margin-top:1rem;"></div>
+{% endblock %}

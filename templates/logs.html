@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Просмотр логов</h2>
+<div id="logs-container">
+  <aside class="log-sidebar">
+    <div class="log-group">
+      <h3>🕑 Последние 3 лога</h3>
+      <ul id="latest-log-list" class="log-list"><li>Загрузка...</li></ul>
+    </div>
+  
+    <div class="log-group">
+     <h3>📁 Все файлы   <button  class="logsbutton" id="download-all-btn" style=" position: relative;
+  left: 84px;">Скачать всё ZIP</button> </h3>
+      
+  
+      <!-- Блок фильтров -->
+      <div id="filters" style="margin-bottom: 1rem;">
+        <label><input type="checkbox" value="*all" checked>Все форматы</label>
+        <label><input type="checkbox" value="acep" checked> Базовые</label>
+        <label><input type="checkbox" value="acceptance" checked> Расширеные Базовые</label>
+        <label><input type="checkbox" value="Regression" checked> Полные</label>
+        <label><input type="checkbox" value="regres" checked> Расширеные Полные</label>
+        <label><input type="checkbox" value=".txt" checked> .txt</label>
+        <label><input type="checkbox" value=".jpg" checked> .jpg</label>
+      </div>
+  
+      <ul id="file-list" class="log-list"><li>Загрузка...</li></ul>
+    </div>
+  </aside>
+  
+  
+
+  <section class="viewer">
+    <div class="viewer-header">
+      <h3 id="current-file">Выберите файл</h3>
+      <div style="display: flex; gap: 0.5rem;">
+        <button  class="logsbutton" id="download-btn" disabled >Скачать</button>
+        <button  class="logsbutton" id="delete-btn" disabled style="background:#dc3545;">Удалить</button>
+        
+      </div>
+    </div>
+    <pre id="file-content">Содержимое появится здесь...</pre>
+  </section>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const listEl = document.getElementById('file-list');
+    const latestListEl = document.getElementById('latest-log-list');
+    const contentEl = document.getElementById('file-content');
+    const titleEl = document.getElementById('current-file');
+    const btnDownload = document.getElementById('download-btn');
+    const btnDelete = document.getElementById('delete-btn');
+    const btnDownloadAll = document.getElementById('download-all-btn');
+    const filterEls = document.querySelectorAll('#filters input[type="checkbox"]');
+    let allFiles = [];
+    let currentFile = '';
+  
+    function extractTimestamp(name) {
+      const match = name.match(/(\d{8})_(\d{6})/);
+      if (!match) return null;
+      const [_, date, time] = match;
+      return new Date(
+        date.slice(0, 4),
+        date.slice(4, 6) - 1,
+        date.slice(6, 8),
+        time.slice(0, 2),
+        time.slice(2, 4),
+        time.slice(4, 6)
+      ).getTime();
+    }
+  
+    fetch('/api/logs')
+      .then(r => r.json())
+      .then(data => {
+        allFiles = data.files.map(f => ({
+          name: f,
+          time: extractTimestamp(f) || 0
+        }));
+  
+        renderLists();
+      });
+  
+    function renderLists() {
+      const activeFilters = Array.from(filterEls)
+        .filter(el => el.checked)
+        .map(el => el.value.toLowerCase());
+  
+      listEl.innerHTML = '';
+      latestListEl.innerHTML = '';
+  
+      if (!allFiles.length) {
+        listEl.innerHTML = '<li>Нет логов</li>';
+        return;
+      }
+  
+      const topFiles = [...allFiles]
+        .filter(f => f.time)
+        .sort((a, b) => b.time - a.time)
+        .slice(0, 3);
+  
+      const restFiles = allFiles.filter(f => !topFiles.includes(f));
+  
+      const append = (el, fileObj) => {
+        const li = document.createElement('li');
+        li.textContent = fileObj.name;
+        li.title = fileObj.name;
+        li.addEventListener('click', () => loadLog(fileObj.name));
+        el.appendChild(li);
+      };
+  
+      topFiles.forEach(f => append(latestListEl, f));
+  
+      restFiles.forEach(f => {
+        const lower = f.name.toLowerCase();
+        const matchesAll = activeFilters.includes('*all');
+        const matchesFiltered = activeFilters.some(filt => lower.includes(filt));
+        if (matchesAll || matchesFiltered) append(listEl, f);
+      });
+    }
+  
+    filterEls.forEach(el => el.addEventListener('change', renderLists));
+  
+    function loadLog(fname) {
+      currentFile = fname;
+      titleEl.textContent = fname;
+      contentEl.textContent = 'Загрузка...';
+      btnDownload.disabled = false;
+      btnDelete.disabled = false;
+  
+      fetch(`/api/logs/${encodeURIComponent(fname)}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.type === 'image') {
+            contentEl.innerHTML = `<img src="${data.url}" style="max-width:100%; max-height:70vh; border:1px solid #ccc; border-radius:4px;" alt="${data.filename}">`;
+          } else {
+            contentEl.textContent = data.content || '(пустой файл)';
+          }
+        })
+        .catch(() => {
+          contentEl.textContent = 'Ошибка загрузки';
+          btnDownload.disabled = true;
+          btnDelete.disabled = true;
+        });
+    }
+  
+    btnDownload.addEventListener('click', () => {
+      if (!currentFile) return;
+      window.location.href = `/api/logs/download/${encodeURIComponent(currentFile)}`;
+    });
+  
+    btnDelete.addEventListener('click', () => {
+      if (!currentFile) return;
+      if (!confirm(`Удалить файл ${currentFile}?`)) return;
+  
+      fetch(`/api/logs/delete/${encodeURIComponent(currentFile)}`, {
+        method: 'DELETE'
+      })
+        .then(r => r.json())
+        .then(res => {
+          if (res.success) {
+            alert('Файл удалён');
+            renderLists();
+            contentEl.textContent = 'Файл удалён.';
+            titleEl.textContent = 'Файл удалён';
+            btnDelete.disabled = true;
+            btnDownload.disabled = true;
+          } else {
+            alert('Ошибка удаления: ' + res.error);
+          }
+        })
+        .catch(() => alert('Ошибка при удалении файла'));
+    });
+  
+    btnDownloadAll.addEventListener('click', () => {
+      window.location.href = '/api/logs/download_all';
+    });
+  });
+  </script>
+  
+  
+{% endblock %}
