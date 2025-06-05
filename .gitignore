@@ -1,3 +1,6 @@
 /venv/
 /logs/
 /____pycache__/
+__pycache__/
+*.pyc
+venv/
