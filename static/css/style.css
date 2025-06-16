@@ -137,6 +137,28 @@ button:disabled {
   margin-top: 0.5rem;
 }
 
+.doorphone-block {
+  border: 1px solid #ccc;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.var-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.var-row input {
+  margin-right: 0.5rem;
+}
+
+.delete-var {
+  cursor: pointer;
+  color: red;
+  margin-left: 0.5rem;
+}
+
 
 
 #logs-container {
