@@ -140,10 +140,57 @@ if (start3Btn) {
       return row;
     }
 
-    function createDoorphoneBlock() {
+    function updateDoorphoneHeaders() {
+      const blocks = doorphonesEl.querySelectorAll('.doorphone-block');
+      blocks.forEach((b, idx) => {
+        const title = b.querySelector('.doorphone-title');
+        title.textContent = `\u0414\u043e\u043c\u043e\u0444\u043e\u043d #${idx}`; // Домофон
+        const delBtn = b.querySelector('.delete-doorphone');
+        if (idx === 0) {
+          delBtn.style.visibility = 'hidden';
+        } else {
+          delBtn.style.visibility = 'visible';
+        }
+      });
+    }
+
+    function createDoorphoneBlock(copyFrom) {
       const block = document.createElement('div');
       block.className = 'doorphone-block';
+
+      const header = document.createElement('div');
+      header.className = 'doorphone-header';
+
+      const title = document.createElement('span');
+      title.className = 'doorphone-title';
+      header.appendChild(title);
+
+      const del = document.createElement('span');
+      del.className = 'delete-doorphone';
+      del.textContent = '🗑️';
+      del.addEventListener('click', () => {
+        block.remove();
+        updateDoorphoneHeaders();
+      });
+      header.appendChild(del);
+
+      block.appendChild(header);
+
+      const varsContainer = document.createElement('div');
+      varsContainer.className = 'vars-container';
+      block.appendChild(varsContainer);
+
       doorphonesEl.appendChild(block);
+
+      if (copyFrom) {
+        copyFrom.querySelectorAll('.var-row').forEach(row => {
+          const n = row.querySelector('.var-name').value;
+          const v = row.querySelector('.var-value').value;
+          varsContainer.appendChild(createVarRow(n, v));
+        });
+      }
+
+      updateDoorphoneHeaders();
       return block;
     }
 
@@ -159,7 +206,7 @@ if (start3Btn) {
         if (idx !== -1) {
           const name = trimmed.slice(0, idx).trim();
           const value = trimmed.slice(idx + 1).trim();
-          currentBlock.appendChild(createVarRow(name, value));
+          currentBlock.querySelector('.vars-container').appendChild(createVarRow(name, value));
         }
       }
     });
@@ -172,12 +219,13 @@ if (start3Btn) {
       } else {
         currentBlock = blocks[blocks.length - 1];
       }
-      currentBlock.appendChild(createVarRow());
+      currentBlock.querySelector('.vars-container').appendChild(createVarRow());
     });
 
     const addDoorphoneBtn = document.getElementById('addDoorphoneBtn');
     addDoorphoneBtn.addEventListener('click', () => {
-      currentBlock = createDoorphoneBlock();
+      const first = doorphonesEl.querySelector('.doorphone-block');
+      currentBlock = createDoorphoneBlock(first);
     });
 
     const form = document.getElementById('configForm');
