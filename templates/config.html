@@ -2,39 +2,49 @@
 
 {% block content %}
   <h2>Конфигурация</h2>
-  <!-- Форма для редактирования config.txt -->
-  <form method="post">
-    <textarea name="config" rows="15" style="width:100%;height: 240px;">{{ config | e }}</textarea>
-    <button type="submit">Сохранить</button>
-  </form>
-  <div><h2>Пример как должен выглядить Конфиг</h2>
-  <form method="post">
-    <textarea readonly name="config" rows="15" style="width:100%;height: 320px;">
-IP_CAMERA=192.168.0.245:85  # Здесь записывается IP-камеры с портом  
-LOGIN=admin                 # Логин от домофона (по стандарту admin)  
-PASSWORD=123456             # Пароль можно узнать на сайте https://192.168.0.100 (на данный момент не в рабочем состоянии)  
+  <div class="config-container">
+    <div class="edit-form">
+      <div id="doorphones"></div>
+      <div class="btn-group">
+        <button type="button" id="addVarBtn">Добавить переменную</button>
+        <button type="button" id="addDoorphoneBtn">Добавить домофон</button>
+      </div>
+      <form method="post" id="configForm">
+        <input type="hidden" name="config" id="configInput">
+        <button type="submit">Сохранить</button>
+      </form>
+    </div>
+    <div class="example-block">
+      <h2>Пример как должен выглядить Конфиг</h2>
+      <textarea readonly rows="15" style="width:100%;height: 320px;">
+IP_CAMERA=192.168.0.245:85  # Здесь записывается IP-камеры с портом
+LOGIN=admin                 # Логин от домофона (по стандарту admin)
+PASSWORD=123456             # Пароль можно узнать на сайте https://192.168.0.100 (на данный момент не в рабочем состоянии)
 MAX_SCREENSHOTS=500         # Количество скриншотов для теста (по умолчанию 1000)
 MAX_FIRMWARE_UPLOADS=4      # Количество циклов загрузки прошивки
 FIRMWARE_VERSIONS=2.5.03.21:firmware/2.5.03.21/rootfs.squashfs.gk7205v200.signed,2.5.04.08:firmware/2.5.04.08/rootfs.squashfs.gk7205v200.signed # Путь и название файлов прошивки
 
-Если имеются дополнительные настройки, например, времени или чего-либо, они должны выглядеть следующим образом:  
+Если имеются дополнительные настройки, например, времени или чего-либо, они должны выглядеть следующим образом:
 Time=100
-      
-Для добавления дополнительного домофона к имеющемуся списку нужно добавить разделитель "__________________".  
-      
-Пример:  
-      
-IP_CAMERA=192.168.0.245:85  
-LOGIN=admin  
-PASSWORD=123456  
+
+Для добавления дополнительного домофона к имеющемуся списку нужно добавить разделитель "__________________".
+
+Пример:
+
+IP_CAMERA=192.168.0.245:85
+LOGIN=admin
+PASSWORD=123456
 Time=100(На данный момент не как не используеться для примера)
-__________________  
-      
-IP_CAMERA=192.168.0.246:85  
-LOGIN=admin  
-PASSWORD=123456        
-и т. д.  
-    </textarea>
-  </form>
-</div>
+__________________
+
+IP_CAMERA=192.168.0.246:85
+LOGIN=admin
+PASSWORD=123456
+и т. д.
+      </textarea>
+    </div>
+  </div>
+
+  <script id="config-data" type="application/json">{{ config|tojson }}</script>
 {% endblock %}
+
