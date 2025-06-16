@@ -170,30 +170,12 @@ def analyze_log(filename):
     if not os.path.isfile(file_path):
         return jsonify(error='Файл не найден'), 404
 
-    with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
-        content = f.read()
-
-    token = os.environ.get('GIGACHAT_TOKEN')
-    if not token:
-        return jsonify(error='Токен GigaChat не настроен'), 500
-
     try:
-        import requests
-        payload = {
-            'model': 'GigaChat',
-            'messages': [
-                {'role': 'user', 'content': content + '\nПроанализируй результаты тестов и дай краткий вывод на русском'}
-            ]
-        }
-        headers = {
-            'Authorization': f'Bearer {token}',
-            'Content-Type': 'application/json'
-        }
-        resp = requests.post('https://gigachat.devices.sber.ru/api/v1/chat/completions',
-                             headers=headers, json=payload, timeout=30)
-        data = resp.json()
-        answer = data.get('choices', [{}])[0].get('message', {}).get('content', '')
+        import log_analyzer
+        answer = log_analyzer.analyze_file(file_path)
         return jsonify(answer=answer)
+    except FileNotFoundError:
+        return jsonify(error='Файл не найден'), 404
     except Exception as e:
         return jsonify(error=str(e)), 500
 
