@@ -99,5 +99,5 @@ def run():
     plot_results(percent, out_img)
     return "У нас все ок у вас как"
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print(run())
