@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>Выбор автотестов</h2>
+  <form id="tests-form">
+    {% for name in tests %}
+      <div>
+        <label>
+          <input type="checkbox" name="tests" value="{{ name }}"> {{ name }}
+        </label>
+      </div>
+    {% endfor %}
+    <button type="submit">Запустить</button>
+  </form>
+  <pre id="custom-output" style="white-space: pre-line; margin-top:1rem;"></pre>
+{% endblock %}

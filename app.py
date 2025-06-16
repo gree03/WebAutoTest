@@ -16,9 +16,17 @@ import test_firmware as start_test_firmware
 import resultLog
 from routes_extra import extra_bp
 from datetime import datetime
+from progTest.screenshot import run as screenshot_run
+from progTest.ParsProshivka import get_device_info as version_run
 
 app = Flask(__name__)
 app.register_blueprint(extra_bp)
+
+# Доступные автотесты в папке progTest
+AVAILABLE_TESTS = {
+    'screenshot': screenshot_run,
+    'version': version_run,
+}
 
 @app.route('/')
 def index():
@@ -27,6 +35,11 @@ def index():
 @app.route('/run')
 def run_page():
     return render_template('run.html')
+
+# Страница выбора автотестов
+@app.route('/select-tests')
+def select_tests():
+    return render_template('select_tests.html', tests=AVAILABLE_TESTS.keys())
 
 @app.route('/start1')
 def start1_view():
@@ -45,6 +58,53 @@ def start3_view():
 @app.route('/result')
 def result_view():
     return jsonify(result=resultLog.run())
+
+# Запуск выбранных автотестов
+@app.route('/api/run-tests', methods=['POST'])
+def api_run_tests():
+    data = request.get_json() or {}
+    selected = data.get('tests', [])
+    selected_funcs = {t: AVAILABLE_TESTS[t] for t in selected if t in AVAILABLE_TESTS}
+    if not selected_funcs:
+        return jsonify(result='Нет выбранных тестов')
+
+    devices = start.load_device_configs('config.txt')
+    results = []
+    for cfg in devices:
+        ip = cfg.get('IP_CAMERA', '')
+        login = cfg.get('LOGIN', '')
+        password = cfg.get('PASSWORD', '')
+        device_res = {}
+        for name, func in selected_funcs.items():
+            try:
+                if name == 'screenshot':
+                    r = func(ip, login, password)
+                    device_res['screenshot'] = r.get('success_rate')
+                elif name == 'version':
+                    r = func(ip, login, password)
+                    device_res['version'] = r
+            except Exception as e:
+                device_res[name] = f'Ошибка: {e}'
+        results.append((cfg, device_res))
+
+    lines = []
+    for cfg, res in results:
+        cfg_line = " ".join(f"{k}={v}" for k, v in cfg.items())
+        lines.append(cfg_line)
+        for k, v in res.items():
+            lines.append(f"{k}: {v}")
+        lines.append('')
+
+    log_text = "\n".join(lines).strip()
+    log_dir = 'logs'
+    os.makedirs(log_dir, exist_ok=True)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    log_filename = f"logcustom_{timestamp}.txt"
+    log_path = os.path.join(log_dir, log_filename)
+    with open(log_path, 'w', encoding='utf-8') as f:
+        f.write(log_text)
+
+    return jsonify(result=log_text)
 
 @app.route('/start1_progress')
 def start1_progress():
