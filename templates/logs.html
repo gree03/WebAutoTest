@@ -34,9 +34,9 @@
     <div class="viewer-header">
       <h3 id="current-file">Выберите файл</h3>
       <div style="display: flex; gap: 0.5rem;">
-        <button  class="logsbutton" id="download-btn" disabled >Скачать</button>
-        <button  class="logsbutton" id="delete-btn" disabled style="background:#dc3545;">Удалить</button>
-        
+        <button class="logsbutton" id="download-btn" disabled>Скачать</button>
+        <button class="logsbutton" id="delete-btn" disabled style="background:#dc3545;">Удалить</button>
+        <button class="logsbutton" id="analyze-btn" disabled>Получить результат</button>
       </div>
     </div>
     <pre id="file-content">Содержимое появится здесь...</pre>
@@ -52,6 +52,7 @@
     const btnDownload = document.getElementById('download-btn');
     const btnDelete = document.getElementById('delete-btn');
     const btnDownloadAll = document.getElementById('download-all-btn');
+    const btnAnalyze = document.getElementById('analyze-btn');
     const filterEls = document.querySelectorAll('#filters input[type="checkbox"]');
     let allFiles = [];
     let currentFile = '';
@@ -127,6 +128,7 @@
       contentEl.textContent = 'Загрузка...';
       btnDownload.disabled = false;
       btnDelete.disabled = false;
+      if (btnAnalyze) btnAnalyze.disabled = false;
   
       fetch(`/api/logs/${encodeURIComponent(fname)}`)
         .then(r => r.json())
@@ -141,6 +143,7 @@
           contentEl.textContent = 'Ошибка загрузки';
           btnDownload.disabled = true;
           btnDelete.disabled = true;
+          if (btnAnalyze) btnAnalyze.disabled = true;
         });
     }
   
@@ -165,12 +168,39 @@
             titleEl.textContent = 'Файл удалён';
             btnDelete.disabled = true;
             btnDownload.disabled = true;
+            if (btnAnalyze) btnAnalyze.disabled = true;
           } else {
             alert('Ошибка удаления: ' + res.error);
           }
         })
         .catch(() => alert('Ошибка при удалении файла'));
     });
+
+    if (btnAnalyze) {
+      btnAnalyze.addEventListener('click', () => {
+        if (!currentFile) return;
+        btnAnalyze.disabled = true;
+        btnAnalyze.textContent = 'Обработка...';
+        fetch(`/api/logs/analyze/${encodeURIComponent(currentFile)}`, {
+          method: 'POST'
+        })
+          .then(r => r.json())
+          .then(res => {
+            btnAnalyze.textContent = 'Получить результат';
+            btnAnalyze.disabled = false;
+            if (res.error) {
+              alert(res.error);
+            } else {
+              contentEl.textContent = res.answer || 'Нет ответа';
+            }
+          })
+          .catch(() => {
+            btnAnalyze.textContent = 'Получить результат';
+            btnAnalyze.disabled = false;
+            alert('Ошибка анализа');
+          });
+      });
+    }
   
     btnDownloadAll.addEventListener('click', () => {
       window.location.href = '/api/logs/download_all';

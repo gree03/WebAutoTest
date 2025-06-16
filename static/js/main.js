@@ -108,21 +108,4 @@ if (start3Btn) {
   });
 }
 
-  // Result
-  const resultBtn = document.getElementById('resultBtn');
-  if (resultBtn) {
-    resultBtn.addEventListener('click', () => {
-      progressBar.value = 0;
-      output.textContent = '';
-      fetch('/result')
-        .then(res => res.json())
-        .then(data => {
-          // В этом случае прогресс не меняется, сразу выводим результат
-          output.textContent = data.result;
-        })
-        .catch(() => {
-          output.textContent = 'Ошибка при получении результата.';
-        });
-    });
-  }
 });

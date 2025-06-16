@@ -163,6 +163,40 @@ def download_all_logs():
         headers={'Content-Disposition': 'attachment; filename=logs.zip'}
     )
 
+@app.route('/api/logs/analyze/<path:filename>', methods=['POST'])
+def analyze_log(filename):
+    logs_dir = os.path.join(os.getcwd(), 'logs')
+    file_path = os.path.join(logs_dir, filename)
+    if not os.path.isfile(file_path):
+        return jsonify(error='Файл не найден'), 404
+
+    with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
+        content = f.read()
+
+    token = os.environ.get('GIGACHAT_TOKEN')
+    if not token:
+        return jsonify(error='Токен GigaChat не настроен'), 500
+
+    try:
+        import requests
+        payload = {
+            'model': 'GigaChat',
+            'messages': [
+                {'role': 'user', 'content': content + '\nПроанализируй результаты тестов и дай краткий вывод на русском'}
+            ]
+        }
+        headers = {
+            'Authorization': f'Bearer {token}',
+            'Content-Type': 'application/json'
+        }
+        resp = requests.post('https://gigachat.devices.sber.ru/api/v1/chat/completions',
+                             headers=headers, json=payload, timeout=30)
+        data = resp.json()
+        answer = data.get('choices', [{}])[0].get('message', {}).get('content', '')
+        return jsonify(answer=answer)
+    except Exception as e:
+        return jsonify(error=str(e)), 500
+
 @app.route('/api/tests')
 def api_tests_list():
     import tests_runner
