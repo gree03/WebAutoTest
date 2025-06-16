@@ -112,6 +112,31 @@ button:disabled {
   white-space: pre-wrap;
 }
 
+/* ========== CONFIG PAGE ========== */
+.config-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+}
+
+.config-container textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: monospace;
+}
+
+.config-container .edit-form,
+.config-container .example-block {
+  flex: 1 1 45%;
+  display: flex;
+  flex-direction: column;
+}
+
+.config-container .edit-form button {
+  align-self: flex-start;
+  margin-top: 0.5rem;
+}
+
 
 
 #logs-container {
