@@ -1,34 +1,77 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Автотесты</h2>
-<div id="tests-list">Загрузка...</div>
-<button id="runTestsBtn" style="margin-top:1rem;">Запустить</button>
-<pre id="testsOutput" style="white-space: pre-wrap; margin-top:1rem;"></pre>
+  <h2>Автотесты</h2>
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  const listEl = document.getElementById('tests-list');
-  const btn = document.getElementById('runTestsBtn');
-  const outputEl = document.getElementById('testsOutput');
+  <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:1rem;">
+    <div id="tests-list">Загрузка...</div>
+    <button id="runTestsBtn">Запустить</button>
+  </div>
 
-  fetch('/api/tests')
-    .then(r => r.json())
-    .then(data => {
-      listEl.innerHTML = data.tests.map(t => `<label><input type="checkbox" value="${t}">${t}</label>`).join('<br>');
-    });
+  <div id="timer" style="font-weight:bold; margin-bottom:1rem;">00:00</div>
 
-  btn.addEventListener('click', () => {
-    const selected = Array.from(listEl.querySelectorAll('input:checked')).map(el => el.value);
-    outputEl.textContent = 'Запуск...';
-    fetch('/api/tests/run', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({tests: selected})
-    })
+  <div style="margin-top:1rem">
+    <label for="progressBar"></label>
+    <progress id="progressBar" max="100" value="0" style="width:100%"></progress>
+  </div>
+
+  <div id="testsOutput" style="white-space: pre-line; margin-top:1rem;"></div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const listEl = document.getElementById('tests-list');
+    const btn = document.getElementById('runTestsBtn');
+    const outputEl = document.getElementById('testsOutput');
+    const progressBar = document.getElementById('progressBar');
+    const timerEl = document.getElementById('timer');
+    let timerInterval;
+
+    function startTimer() {
+      const start = Date.now();
+      timerEl.textContent = '00:00';
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        const diff = Math.floor((Date.now() - start) / 1000);
+        const m = String(Math.floor(diff / 60)).padStart(2, '0');
+        const s = String(diff % 60).padStart(2, '0');
+        timerEl.textContent = `${m}:${s}`;
+      }, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(timerInterval);
+    }
+
+    fetch('/api/tests')
       .then(r => r.json())
-      .then(data => { outputEl.textContent = data.result; })
-      .catch(() => { outputEl.textContent = 'Ошибка запуска'; });
+      .then(data => {
+        listEl.innerHTML = data.tests.map(t => `<label style="display:block;"><input type="checkbox" value="${t}"> ${t}</label>`).join('');
+      });
+
+    btn.addEventListener('click', () => {
+      const selected = Array.from(listEl.querySelectorAll('input:checked')).map(el => el.value);
+      if (selected.length === 0) {
+        outputEl.textContent = 'Не выбраны тесты';
+        return;
+      }
+      progressBar.value = 0;
+      outputEl.textContent = 'Запуск...';
+      startTimer();
+      fetch('/api/tests/run', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({tests: selected})
+      })
+        .then(r => r.json())
+        .then(data => {
+          progressBar.value = 100;
+          stopTimer();
+          outputEl.textContent = data.result;
+        })
+        .catch(() => {
+          stopTimer();
+          outputEl.textContent = 'Ошибка запуска';
+        });
+    });
   });
-});
-</script>
+  </script>
 {% endblock %}
