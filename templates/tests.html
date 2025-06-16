@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Автотесты</h2>
+<div id="tests-list">Загрузка...</div>
+<button id="runTestsBtn" style="margin-top:1rem;">Запустить</button>
+<pre id="testsOutput" style="white-space: pre-wrap; margin-top:1rem;"></pre>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const listEl = document.getElementById('tests-list');
+  const btn = document.getElementById('runTestsBtn');
+  const outputEl = document.getElementById('testsOutput');
+
+  fetch('/api/tests')
+    .then(r => r.json())
+    .then(data => {
+      listEl.innerHTML = data.tests.map(t => `<label><input type="checkbox" value="${t}">${t}</label>`).join('<br>');
+    });
+
+  btn.addEventListener('click', () => {
+    const selected = Array.from(listEl.querySelectorAll('input:checked')).map(el => el.value);
+    outputEl.textContent = 'Запуск...';
+    fetch('/api/tests/run', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({tests: selected})
+    })
+      .then(r => r.json())
+      .then(data => { outputEl.textContent = data.result; })
+      .catch(() => { outputEl.textContent = 'Ошибка запуска'; });
+  });
+});
+</script>
+{% endblock %}

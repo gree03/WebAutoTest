@@ -28,6 +28,10 @@ def index():
 def run_page():
     return render_template('run.html')
 
+@app.route('/tests')
+def tests_page():
+    return render_template('tests.html')
+
 @app.route('/start1')
 def start1_view():
     print(f"[{datetime.now()}] Запуск Acceptance теста через /start1")
@@ -158,6 +162,19 @@ def download_all_logs():
         mimetype='application/zip',
         headers={'Content-Disposition': 'attachment; filename=logs.zip'}
     )
+
+@app.route('/api/tests')
+def api_tests_list():
+    import tests_runner
+    return jsonify(tests=tests_runner.list_tests())
+
+@app.route('/api/tests/run', methods=['POST'])
+def api_tests_run():
+    import tests_runner
+    data = request.get_json() or {}
+    selected = data.get('tests', [])
+    result = tests_runner.run_selected_tests(selected)
+    return jsonify(result=result)
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=False)
