@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Выбор автотестов</h2>
+<form id="testsForm">
+  <label><input type="checkbox" value="acceptance"> Acceptance</label><br>
+  <label><input type="checkbox" value="regression"> Regression</label><br>
+  <label><input type="checkbox" value="firmware"> Тест прошивки</label><br>
+  <button type="button" id="runSelectedBtn">Запустить выбранные</button>
+</form>
+<div id="selectedOutput" style="white-space: pre-wrap; margin-top:1rem;"></div>
+{% endblock %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('runSelectedBtn');
+  const output = document.getElementById('selectedOutput');
+  btn.addEventListener('click', () => {
+    const checks = document.querySelectorAll('#testsForm input[type="checkbox"]:checked');
+    const tests = Array.from(checks).map(el => el.value);
+    output.textContent = 'Запуск...';
+    fetch('/api/run_selected', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({tests})
+    })
+    .then(r => r.json())
+    .then(data => { output.textContent = data.result; })
+    .catch(() => { output.textContent = 'Ошибка запуска.'; });
+  });
+});
+</script>

@@ -28,6 +28,33 @@ def index():
 def run_page():
     return render_template('run.html')
 
+
+@app.route('/select_tests')
+def select_tests_page():
+    """Страница выбора нескольких автотестов."""
+    return render_template('select_tests.html')
+
+
+@app.route('/api/run_selected', methods=['POST'])
+def run_selected():
+    """Запускает выбранные автотесты последовательно."""
+    data = request.get_json() or {}
+    tests = data.get('tests', [])
+    results = []
+    if 'acceptance' in tests:
+        results.append('=== Acceptance ===\n' + start.run())
+    if 'regression' in tests:
+        try:
+            import Regression as regression
+            results.append('=== Regression ===\n' + regression.run())
+        except Exception as e:
+            results.append(f'Ошибка запуска Regression: {e}')
+    if 'firmware' in tests:
+        results.append('=== Firmware ===\n' + start_test_firmware.run())
+    if not results:
+        return jsonify(result='Нет выбранных тестов')
+    return jsonify(result='\n\n'.join(results))
+
 @app.route('/start1')
 def start1_view():
     print(f"[{datetime.now()}] Запуск Acceptance теста через /start1")
