@@ -28,6 +28,20 @@ def index():
 def run_page():
     return render_template('run.html')
 
+# Новая страница выбора автотестов
+@app.route('/tests')
+def tests_page():
+    from test_launcher import AVAILABLE_TESTS
+    return render_template('tests.html', tests=AVAILABLE_TESTS.keys())
+
+@app.route('/run_selected_tests', methods=['POST'])
+def run_selected_tests():
+    data = request.get_json() or {}
+    tests = data.get('tests', [])
+    from test_launcher import run_selected
+    results = run_selected(tests)
+    return jsonify(results=results)
+
 @app.route('/start1')
 def start1_view():
     print(f"[{datetime.now()}] Запуск Acceptance теста через /start1")

@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Выбор автотестов</h2>
+<form id="tests-form">
+  {% for t in tests %}
+  <label><input type="checkbox" name="tests" value="{{ t }}"> {{ t }}</label><br>
+  {% endfor %}
+  <button type="submit">Запуск</button>
+</form>
+<pre id="tests-output"></pre>
+<script>
+  document.getElementById('tests-form').addEventListener('submit', function(e){
+    e.preventDefault();
+    const checked = Array.from(document.querySelectorAll('input[name="tests"]:checked')).map(el => el.value);
+    fetch('/run_selected_tests', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({tests: checked})
+    }).then(r => r.json()).then(data => {
+      document.getElementById('tests-output').textContent = JSON.stringify(data, null, 2);
+    }).catch(() => {
+      document.getElementById('tests-output').textContent = 'Ошибка запуска';
+    });
+  });
+</script>
+{% endblock %}
