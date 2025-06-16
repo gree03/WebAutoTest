@@ -1,5 +1,4 @@
-# app.py
-# Мега тестовое изменение
+
 from flask import (
     Flask, render_template, jsonify, request,
     redirect, url_for, Response, stream_with_context,
