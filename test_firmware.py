@@ -254,5 +254,5 @@ def run():
     log_progress(f"Тест завершён, лог сохранён: {log_path}")
     return log_text
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print(run())

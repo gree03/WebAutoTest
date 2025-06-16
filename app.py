@@ -13,7 +13,6 @@ from werkzeug.utils import secure_filename
 from io import BytesIO
 import acceptance as start
 import test_firmware as start_test_firmware
-import resultLog
 from routes_extra import extra_bp
 from datetime import datetime
 
@@ -27,6 +26,10 @@ def index():
 @app.route('/run')
 def run_page():
     return render_template('run.html')
+
+@app.route('/tests')
+def tests_page():
+    return render_template('tests.html')
 
 @app.route('/start1')
 def start1_view():
@@ -42,9 +45,6 @@ def start3_view():
     print(f"[{datetime.now()}] Firmware Upload тест завершен")
     return jsonify(result=result)
 
-@app.route('/result')
-def result_view():
-    return jsonify(result=resultLog.run())
 
 @app.route('/start1_progress')
 def start1_progress():
@@ -158,6 +158,35 @@ def download_all_logs():
         mimetype='application/zip',
         headers={'Content-Disposition': 'attachment; filename=logs.zip'}
     )
+
+@app.route('/api/logs/analyze/<path:filename>', methods=['POST'])
+def analyze_log(filename):
+    logs_dir = os.path.join(os.getcwd(), 'logs')
+    file_path = os.path.join(logs_dir, filename)
+    if not os.path.isfile(file_path):
+        return jsonify(error='Файл не найден'), 404
+
+    try:
+        import log_analyzer
+        answer = log_analyzer.analyze_file(file_path)
+        return jsonify(answer=answer)
+    except FileNotFoundError:
+        return jsonify(error='Файл не найден'), 404
+    except Exception as e:
+        return jsonify(error=str(e)), 500
+
+@app.route('/api/tests')
+def api_tests_list():
+    import tests_runner
+    return jsonify(tests=tests_runner.list_tests())
+
+@app.route('/api/tests/run', methods=['POST'])
+def api_tests_run():
+    import tests_runner
+    data = request.get_json() or {}
+    selected = data.get('tests', [])
+    result = tests_runner.run_selected_tests(selected)
+    return jsonify(result=result)
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=False)

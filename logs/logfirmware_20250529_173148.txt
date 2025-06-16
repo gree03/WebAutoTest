@@ -1,8 +1,0 @@
-IP_CAMERA=192.168.0.155:85 LOGIN=admin PASSWORD=123456 MAX_SCREENSHOTS=100 MAX_FIRMWARE_UPLOADS=4 FIRMWARE_VERSIONS=2.5.03.21:firmware/2.5.03.21/rootfs.squashfs.gk7205v200.signed,2.5.04.08:firmware/2.5.04.08/rootfs.squashfs.gk7205v200.signed
-Info: Не удалось подключиться к устройству: HTTPConnectionPool(host='192.168.0.155', port=85): Max retries exceeded with url: /cgi-bin/status.cgi (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7f66ae1df0>: Failed to establish a new connection: [Errno 113] No route to host'))
-firmware_successes: {'2.5.03.21': 0, '2.5.04.08': 0}
-firmware_failures: {'2.5.03.21': 0, '2.5.04.08': 0}
-firmware_attempts: 0
-Время выполнения (сек): 3.11
-Текущее время: 2025-05-29 17:31:45
-error_message: Ошибка проверки версии: Не удалось подключиться: HTTPConnectionPool(host='192.168.0.155', port=85): Max retries exceeded with url: /cgi-bin/magicBox.cgi?action=getSoftwareVersion (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7f66aba240>: Failed to establish a new connection: [Errno 113] No route to host'))

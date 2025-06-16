@@ -1,8 +1,0 @@
-IP_CAMERA=192.168.0.155:85 LOGIN=admin PASSWORD=123456 MAX_SCREENSHOTS=500 MAX_FIRMWARE_UPLOADS=4
-Info: Не удалось подключиться к устройству: HTTPConnectionPool(host='192.168.0.155', port=85): Read timed out. (read timeout=5)
-firmware_successes: {'2.5.03.21': 0, '2.5.04.08': 0}
-firmware_failures: {'2.5.03.21': 4, '2.5.04.08': 0}
-firmware_attempts: 2
-Время выполнения (сек): 78.73
-Текущее время: 2025-05-27 11:01:56
-error_message: Firmware file not found: /home/khadas/Desktop/Web.0.0.1/WebAutoTest/firmware/2.5.03.21/rootfs.squashfs
