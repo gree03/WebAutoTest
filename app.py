@@ -1,6 +1,6 @@
 # app.py
 # Мега тестовое изменение
-from flask import (
+from flask import ( # type: ignore
     Flask, render_template, jsonify, request,
     redirect, url_for, Response, stream_with_context,
     send_from_directory
@@ -160,4 +160,4 @@ def download_all_logs():
     )
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    app.run(host="0.0.0.0", port=5004, debug=False)
