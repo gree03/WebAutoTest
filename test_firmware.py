@@ -1,4 +1,3 @@
-# test_firmware.py
 import os
 import time
 import multiprocessing
@@ -12,9 +11,46 @@ from progTest.ParsProshivka import get_device_info
 
 # Константы
 ERROR_THRESHOLD = 3
-RESET_TIMEOUT = 60
+RESET_TIMEOUT = 30
 UPLOAD_TIMEOUT = 120
 REQUEST_TIMEOUT = 10
+PING_TIMEOUT = 5
+MAX_PING_ATTEMPTS = 10
+
+def extract_versions(info_str: str) -> Dict:
+    """Извлекает версии MCU, UICL и RootFS из строки get_device_info."""
+    versions = {'MCU': '', 'UICL': '', 'RootFS': ''}
+    lines = info_str.split('\n')
+    in_firmware = False
+    for line in lines:
+        line = line.strip()
+        if line == 'Прошивка:':
+            in_firmware = True
+            continue
+        if in_firmware and ':' in line:
+            key_value = line.split(':', 1)
+            if len(key_value) == 2:
+                key = key_value[0].strip()
+                value = key_value[1].strip()
+                if key in versions:
+                    versions[key] = value
+    return versions
+
+def wait_for_device(ip: str, timeout: int = PING_TIMEOUT, max_attempts: int = MAX_PING_ATTEMPTS) -> bool:
+    """Ждет, пока устройство станет доступным."""
+    log_progress(f"Ожидание доступности устройства {ip}")
+    for attempt in range(max_attempts):
+        try:
+            response = requests.get(f"http://{ip}/cgi-bin/status.cgi", timeout=timeout)
+            if response.status_code in (200, 401):
+                log_progress(f"Устройство {ip} доступно")
+                return True
+        except requests.RequestException:
+            pass
+        log_progress(f"Попытка {attempt + 1}/{max_attempts}: устройство {ip} недоступно")
+        time.sleep(timeout)
+    log_progress(f"Устройство {ip} не стало доступным после {max_attempts} попыток")
+    return False
 
 def load_firmware_config(config_path: str = 'config.txt') -> Tuple[List[Dict], List[Dict]]:
     """
@@ -41,7 +77,6 @@ def load_firmware_config(config_path: str = 'config.txt') -> Tuple[List[Dict], L
                     key, val = key.strip(), val.strip()
                     current[key] = val
                     if key == 'FIRMWARE_VERSIONS' and val:
-                        # Парсим FIRMWARE_VERSIONS=версия:путь,версия:путь
                         for item in val.split(','):
                             if ':' in item:
                                 version, path = item.split(':', 1)
@@ -65,7 +100,6 @@ def get_rootfs_version(ip: str, login: str, password: str) -> str:
         url = f"http://{ip}/cgi-bin/magicBox.cgi?action=getSoftwareVersion"
         response = requests.get(url, auth=HTTPBasicAuth(login, password), timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
-        # Парсим ответ, например: "version=2.5.03.21\nkernel=2023060714"
         for line in response.text.splitlines():
             if line.startswith("version="):
                 return line.split("version=")[1].strip()
@@ -98,6 +132,7 @@ def reset_and_wait(ip: str, login: str, password: str, timeout: int) -> None:
     reset_firmware(ip, login, password)
     log_progress(f"Запрос сброса отправлен, ждём {timeout} секунд")
     time.sleep(timeout)
+    wait_for_device(ip)
 
 def upload_and_wait(ip: str, login: str, password: str, firmware_path: str, timeout: int) -> Dict:
     """
@@ -109,6 +144,7 @@ def upload_and_wait(ip: str, login: str, password: str, firmware_path: str, time
     if result['success']:
         log_progress(f"Ждём {timeout} секунд для завершения загрузки")
         time.sleep(timeout)
+        wait_for_device(ip)
     else:
         log_progress(f"Ошибка загрузки прошивки: {result['error_message']}")
     return result
@@ -133,6 +169,8 @@ def test_device(cfg: Dict, firmware_versions: List[Dict]) -> Dict:
     except (ValueError, TypeError) as e:
         max_uploads = 10
         log_progress(f"Ошибка: Неверное MAX_FIRMWARE_UPLOADS для IP {ip} ({str(e)}), использую 10")
+    expected_mcu_change = cfg.get('EXPECTED_MCU_CHANGE', 'True').lower() == 'true'
+    expected_uicl_change = cfg.get('EXPECTED_UICL_CHANGE', 'True').lower() == 'true'
 
     log_progress(f"Запуск теста прошивки для IP {ip} (MAX_FIRMWARE_UPLOADS={max_uploads})")
     start_ts = time.time()
@@ -142,22 +180,31 @@ def test_device(cfg: Dict, firmware_versions: List[Dict]) -> Dict:
     consecutive_errors = 0
     last_error = ""
     attempts = 0
+    results = []
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
 
     while attempts < max_uploads and consecutive_errors < ERROR_THRESHOLD:
-        # Шаг 1: Проверка текущей версии
-        log_progress(f"Проверка текущей прошивки на IP {ip}")
-        version_result = get_rootfs_version(ip, login, password)
-        if version_result.startswith("Не удалось") or version_result.startswith("Ошибка"):
+        # Шаг 1: Получение начальных версий
+        log_progress(f"Проверка текущих версий на IP {ip}")
+        initial_info = get_device_info(ip, login, password)
+        if initial_info.startswith("Ошибка") or initial_info.startswith("Не удалось"):
             consecutive_errors += 1
-            last_error = f"Ошибка проверки версии: {version_result}"
+            last_error = f"Ошибка получения начальных версий: {initial_info}"
             log_progress(last_error)
             break
-        current_version = version_result
-        log_progress(f"Текущая RootFS: {current_version}")
+        initial_versions = extract_versions(initial_info)
+        log_progress(f"Начальные версии: MCU={initial_versions['MCU']}, UICL={initial_versions['UICL']}, RootFS={initial_versions['RootFS']}")
 
         # Шаг 2: Выбор следующей прошивки
+        current_version = initial_versions['RootFS'] or get_rootfs_version(ip, login, password)
+        if current_version.startswith("Не удалось") or current_version.startswith("Ошибка"):
+            consecutive_errors += 1
+            last_error = f"Ошибка проверки версии RootFS: {current_version}"
+            log_progress(last_error)
+            break
+        log_progress(f"Текущая RootFS: {current_version}")
+
         firmware = select_next_firmware(current_version, firmware_versions)
         expected_version = firmware['version']
         firmware_path = os.path.join(base_dir, firmware['path'])
@@ -173,26 +220,82 @@ def test_device(cfg: Dict, firmware_versions: List[Dict]) -> Dict:
             last_error = upload_result['error_message']
             failures[expected_version] += 1
             log_progress(last_error)
+            results.append({
+                'firmware_version': expected_version,
+                'initial_versions': initial_versions,
+                'final_versions': {},
+                'version_changes': {'mcu_changed': False, 'uicl_changed': False, 'rootfs_changed': False},
+                'success': False
+            })
         else:
-            # Шаг 5: Проверка версии после загрузки
-            log_progress(f"Проверка прошивки на IP {ip}")
-            new_version = get_rootfs_version(ip, login, password)
-            if new_version.startswith("Не удалось") or new_version.startswith("Ошибка"):
+            # Шаг 5: Проверка версий после загрузки
+            log_progress(f"Проверка версий после прошивки на IP {ip}")
+            final_info = get_device_info(ip, login, password)
+            if final_info.startswith("Ошибка") or final_info.startswith("Не удалось"):
                 consecutive_errors += 1
-                last_error = f"Ошибка проверки версии: {new_version}"
+                last_error = f"Ошибка получения конечных версий: {final_info}"
                 failures[expected_version] += 1
                 log_progress(last_error)
-            elif new_version != expected_version:
-                consecutive_errors += 1
-                last_error = f"Неверная версия RootFS: ожидалась {expected_version}, получена {new_version}"
-                failures[expected_version] += 1
-                log_progress(last_error)
+                results.append({
+                    'firmware_version': expected_version,
+                    'initial_versions': initial_versions,
+                    'final_versions': {},
+                    'version_changes': {'mcu_changed': False, 'uicl_changed': False, 'rootfs_changed': False},
+                    'success': False
+                })
             else:
-                successes[expected_version] += 1
-                consecutive_errors = 0
-                log_progress(f"Успешное обновление прошивки: RootFS={new_version}")
+                final_versions = extract_versions(final_info)
+                new_version = final_versions['RootFS'] or get_rootfs_version(ip, login, password)
+                version_changes = {
+                    'mcu_changed': initial_versions['MCU'] != final_versions['MCU'] and initial_versions['MCU'] and final_versions['MCU'],
+                    'uicl_changed': initial_versions['UICL'] != final_versions['UICL'] and initial_versions['UICL'] and final_versions['UICL'],
+                    'rootfs_changed': initial_versions['RootFS'] != new_version and initial_versions['RootFS'] and new_version
+                }
+                # Отладочный вывод
+                log_progress(f"version_changes: {version_changes}")
+                log_progress(f"Ожидания: MCU={expected_mcu_change}, UICL={expected_uicl_change}")
+                
+                # Проверка RootFS (всегда должно совпадать с ожидаемой версией)
+                rootfs_status = str(new_version).strip() == str(expected_version).strip()
+                
+                # Проверка MCU
+                mcu_status = True  # По умолчанию True, если проверка не требуется
+                if expected_mcu_change:
+                    mcu_status = version_changes['mcu_changed']  # Должно измениться
+                elif initial_versions['MCU'] and final_versions['MCU']:
+                    mcu_status = initial_versions['MCU'] == final_versions['MCU']  # Должно остаться тем же
+                
+                # Проверка UICL
+                uicl_status = True  # По умолчанию True, если проверка не требуется
+                if expected_uicl_change:
+                    uicl_status = version_changes['uicl_changed']  # Должно измениться
+                elif initial_versions['UICL'] and final_versions['UICL']:
+                    uicl_status = initial_versions['UICL'] == final_versions['UICL']  # Должно остаться тем же
 
-        # Шаг 6: Сброс после попытки (успех или неудача)
+                if rootfs_status and mcu_status and uicl_status:
+                    successes[expected_version] += 1
+                    consecutive_errors = 0
+                    log_progress(f"Успешное обновление прошивки: RootFS={new_version}, MCU={final_versions['MCU']}, UICL={final_versions['UICL']}")
+                else:
+                    consecutive_errors += 1
+                    last_error = (
+                        f"Неверные версии: RootFS ожидалось {expected_version}, получено {new_version} "
+                        f"(статус={rootfs_status}), "
+                        f"MCU изменился={version_changes['mcu_changed']} (ожидание={expected_mcu_change}, статус={mcu_status}), "
+                        f"UICL изменился={version_changes['uicl_changed']} (ожидание={expected_uicl_change}, статус={uicl_status})"
+                    )
+                    failures[expected_version] += 1
+                    log_progress(last_error)
+
+                results.append({
+                    'firmware_version': expected_version,
+                    'initial_versions': initial_versions,
+                    'final_versions': final_versions,
+                    'version_changes': version_changes,
+                    'success': rootfs_status and mcu_status and uicl_status
+                })
+
+        # Шаг 6: Сброс после попытки
         reset_and_wait(ip, login, password, RESET_TIMEOUT)
         attempts += 1
         if attempts % 2 == 0:
@@ -207,6 +310,7 @@ def test_device(cfg: Dict, firmware_versions: List[Dict]) -> Dict:
         'firmware_successes': successes,
         'firmware_failures': failures,
         'firmware_attempts': attempts,
+        'firmware_results': results,
         'Время выполнения (сек)': elapsed,
         'Текущее время': current_time,
         'error_message': last_error if last_error else ""
@@ -239,7 +343,23 @@ def run():
         cfg_line = " ".join(f"{k}={v}" for k, v in cfg.items())
         lines.append(cfg_line)
         for name, value in result_dict.items():
-            lines.append(f"{name}: {value}")
+            if name == 'Info':
+                lines.append(value)
+            elif name == 'firmware_results':
+                for result in value:
+                    lines.append(f"Прошивка {result['firmware_version']}:")
+                    lines.append("  Начальные версии:")
+                    for k, v in result['initial_versions'].items():
+                        lines.append(f"    {k}: {v}")
+                    lines.append("  Конечные версии:")
+                    for k, v in result['final_versions'].items():
+                        lines.append(f"    {k}: {v}")
+                    lines.append("  Изменения:")
+                    for k, v in result['version_changes'].items():
+                        lines.append(f"    {k}: {v}")
+                    lines.append(f"  Success: {result['success']}")
+            else:
+                lines.append(f"{name}: {value}")
         lines.append("")
 
     log_text = "\n".join(lines).strip()

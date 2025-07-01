@@ -1,4 +1,5 @@
-
+# app.py
+# Мега тестовое изменение
 from flask import (
     Flask, render_template, jsonify, request,
     redirect, url_for, Response, stream_with_context,
@@ -12,11 +13,16 @@ from werkzeug.utils import secure_filename
 from io import BytesIO
 import acceptance as start
 import test_firmware as start_test_firmware
+import Regression as start_regression
+import resultLog
 from routes_extra import extra_bp
 from datetime import datetime
 
 app = Flask(__name__)
 app.register_blueprint(extra_bp)
+
+# Глобальный словарь для отслеживания состояния тестов
+TEST_RUNNING = {'start1': False, 'start2': False, 'start3': False}
 
 @app.route('/')
 def index():
@@ -33,17 +39,33 @@ def tests_page():
 @app.route('/start1')
 def start1_view():
     print(f"[{datetime.now()}] Запуск Acceptance теста через /start1")
-    result = start.run()
+    TEST_RUNNING['start1'] = True
+    result = start.run() if TEST_RUNNING['start1'] else "Тест остановлен"
+    TEST_RUNNING['start1'] = False
     print(f"[{datetime.now()}] Acceptance тест завершен")
+    return jsonify(result=result)
+
+@app.route('/start2')
+def start2_view():
+    print(f"[{datetime.now()}] Запуск Regression теста через /start2")
+    TEST_RUNNING['start2'] = True
+    result = start_regression.run() if TEST_RUNNING['start2'] else "Тест остановлен"
+    TEST_RUNNING['start2'] = False
+    print(f"[{datetime.now()}] Regression тест завершен")
     return jsonify(result=result)
 
 @app.route('/start3')
 def start3_view():
     print(f"[{datetime.now()}] Запуск Firmware Upload теста через /start3")
-    result = start_test_firmware.run()
+    TEST_RUNNING['start3'] = True
+    result = start_test_firmware.run() if TEST_RUNNING['start3'] else "Тест остановлен"
+    TEST_RUNNING['start3'] = False
     print(f"[{datetime.now()}] Firmware Upload тест завершен")
     return jsonify(result=result)
 
+@app.route('/result')
+def result_view():
+    return jsonify(result=resultLog.run())
 
 @app.route('/start1_progress')
 def start1_progress():
@@ -53,29 +75,61 @@ def start1_progress():
         if total == 0:
             yield f"data: {json.dumps({'progress':100,'done':True,'result':'Нет устройств'})}\n\n"
             return
-        # Имитируем прогресс, так как run() выполнит тест
+        TEST_RUNNING['start1'] = True
         for idx in range(1, total + 1):
+            if not TEST_RUNNING['start1']:
+                yield f"data: {json.dumps({'progress':0,'done':True,'result':'Тест остановлен'})}\n\n"
+                TEST_RUNNING['start1'] = False
+                return
             pct = int(idx / total * 100)
             yield f"data: {json.dumps({'progress':pct,'done':False})}\n\n"
             time.sleep(0.1)
-        final = start.run()  # Выполняем тест один раз
+        final = start.run() if TEST_RUNNING['start1'] else "Тест остановлен"
+        TEST_RUNNING['start1'] = False
+        yield f"data: {json.dumps({'progress':100,'done':True,'result':final})}\n\n"
+    return Response(stream_with_context(generate()), mimetype='text/event-stream')
+
+@app.route('/start2_progress')
+def start2_progress():
+    def generate():
+        devices = start_regression.load_device_configs('config.txt')
+        total = len(devices)
+        if total == 0:
+            yield f"data: {json.dumps({'progress':100,'done':True,'result':'Нет устройств'})}\n\n"
+            return
+        TEST_RUNNING['start2'] = True
+        for idx in range(1, total + 1):
+            if not TEST_RUNNING['start2']:
+                yield f"data: {json.dumps({'progress':0,'done':True,'result':'Тест остановлен'})}\n\n"
+                TEST_RUNNING['start2'] = False
+                return
+            pct = int(idx / total * 100)
+            yield f"data: {json.dumps({'progress':pct,'done':False})}\n\n"
+            time.sleep(0.1)
+        final = start_regression.run() if TEST_RUNNING['start2'] else "Тест остановлен"
+        TEST_RUNNING['start2'] = False
         yield f"data: {json.dumps({'progress':100,'done':True,'result':final})}\n\n"
     return Response(stream_with_context(generate()), mimetype='text/event-stream')
 
 @app.route('/start3_progress')
 def start3_progress():
     def generate():
-        devices, _ = start_test_firmware.load_firmware_config('config.txt')  # Извлекаем только devices
+        devices, _ = start_test_firmware.load_firmware_config('config.txt')
         total = len(devices)
         if total == 0:
             yield f"data: {json.dumps({'progress':100,'done':True,'result':'Нет устройств'})}\n\n"
             return
-        # Имитируем прогресс, так как run() выполнит тест
+        TEST_RUNNING['start3'] = True
         for idx in range(1, total + 1):
+            if not TEST_RUNNING['start3']:
+                yield f"data: {json.dumps({'progress':0,'done':True,'result':'Тест остановлен'})}\n\n"
+                TEST_RUNNING['start3'] = False
+                return
             pct = int(idx / total * 100)
             yield f"data: {json.dumps({'progress':pct,'done':False})}\n\n"
             time.sleep(0.1)
-        final = start_test_firmware.run()  # Выполняем тест один раз
+        final = start_test_firmware.run() if TEST_RUNNING['start3'] else "Тест остановлен"
+        TEST_RUNNING['start3'] = False
         yield f"data: {json.dumps({'progress':100,'done':True,'result':final})}\n\n"
     return Response(stream_with_context(generate()), mimetype='text/event-stream')
 
@@ -188,4 +242,4 @@ def api_tests_run():
     return jsonify(result=result)
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    app.run(host="0.0.0.0", port=5004, debug=False)
