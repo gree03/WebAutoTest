@@ -3,6 +3,7 @@ from datetime import datetime
 import importlib
 from typing import Dict, List
 import Regression as regression
+from ping_utils import filter_reachable_devices
 
 
 def _discover_tests() -> Dict[str, tuple]:
@@ -46,7 +47,12 @@ def run_selected_tests(selected: List[str]) -> str:
     if not devices:
         return 'Нет устройств в config.txt'
 
-    lines: List[str] = []
+    devices, warnings = filter_reachable_devices(devices)
+    if not devices:
+        warnings.append("\u26a0\ufe0f \"Не удалось подключиться ни к одному домофону. Тестирование отменено.\"")
+        return "\n".join(warnings)
+
+    lines: List[str] = list(warnings)
     from io import StringIO
     from contextlib import redirect_stdout
 
@@ -91,3 +97,4 @@ def run_selected_tests(selected: List[str]) -> str:
             continue
         clean.append(ln)
     return '\n'.join(clean)
+

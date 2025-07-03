@@ -5,6 +5,7 @@ import multiprocessing
 from datetime import datetime
 from progTest.screenshot import run as screenshot_run
 from progTest.ParsProshivka import get_device_info as version_run
+from ping_utils import filter_reachable_devices
 # import progTest.my_task  # пример для расширения обработчиков
 
 
@@ -69,10 +70,15 @@ def run():
     if not devices:
         return "Нет устройств в config.txt"
 
+    devices, warnings = filter_reachable_devices(devices)
+    if not devices:
+        warnings.append("\u26a0\ufe0f \"Не удалось подключиться ни к одному домофону. Тестирование отменено.\"")
+        return "\n".join(warnings)
+
     with multiprocessing.Pool(processes=len(devices)) as pool:
         outcomes = pool.map(handle_one, devices)
 
-    lines = []
+    lines = list(warnings)
     for cfg, result_dict in zip(devices, outcomes):
         cfg_line = " ".join(f"{k}={v}" for k, v in cfg.items())
         lines.append(cfg_line)
@@ -96,3 +102,4 @@ def run():
 
 if __name__ == '__main__':
     print(run())
+
