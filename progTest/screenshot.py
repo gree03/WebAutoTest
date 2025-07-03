@@ -6,7 +6,7 @@ from datetime import datetime
 from PIL import Image
 from io import BytesIO
 
-def run(ip, username, password, max_attempts=10000, progress_callback=None):
+def run(ip, username, password, max_attempts=10, progress_callback=None):
     """
     Выполняет до max_attempts HTTP GET-запросов к http://{ip}/image.jpg и проверяет, является ли ответ действительным изображением.
     Сохраняет успешные скриншоты в logs/screenshots/.

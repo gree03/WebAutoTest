@@ -5,6 +5,7 @@ import multiprocessing
 from datetime import datetime
 from progTest.screenshot import run as screenshot_run
 from progTest.ParsProshivka import get_device_info as version_run
+from progTest.Send_Text import run as SeendText
 from ping_utils import filter_reachable_devices
 
 def load_device_configs(path='config.txt'):
@@ -54,16 +55,20 @@ def handle_one(cfg):
 
     print(f"[{datetime.now()}] Начало обработки устройства IP {ip} (MAX_SCREENSHOTS={max_screenshots})")
     start_ts = time.time()
-
+    SeendText_start = SeendText(ip, login, password, "Автотест запущен!", 0)
     screenshot_result = screenshot_run(ip, login, password, max_attempts=max_screenshots)
     version_result = version_run(ip, login, password)
+    
 
     elapsed = round(time.time() - start_ts, 2)
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    SeendText_stop = SeendText(ip, login, password, "Автотест завершён.", 10)
+    
 
     print(f"[{datetime.now()}] Завершение обработки IP {ip}: Время {elapsed} сек, Скриншоты: {screenshot_result['success_rate']}")
 
     return {
+        'Отправка сообщение': SeendText_start,
         'Info': version_result,
         'screenshot': screenshot_result['success'],
         'screenshot_success_rate': screenshot_result['success_rate'],
@@ -71,6 +76,7 @@ def handle_one(cfg):
         'screenshot_successes': screenshot_result['successes'],
         'Время выполнения (сек)': elapsed,
         'Текущее время': current_time,
+        'Отправка сообщение' : SeendText_stop,
     }
 
 

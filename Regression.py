@@ -6,6 +6,7 @@ from datetime import datetime
 from progTest.screenshot import run as screenshot_run
 from progTest.ParsProshivka import get_device_info as version_run
 from ping_utils import filter_reachable_devices
+from progTest.Send_Text import run as SeendText
 # import progTest.my_task  # пример для расширения обработчиков
 
 
@@ -48,16 +49,20 @@ def handle_one(cfg):
     password = cfg.get('PASSWORD')
 
     start_ts = time.time()
-    screenshot_result = screenshot_run(ip, login, password)
+    SeendText_start = SeendText(ip, login, password, "Автотест запущен!", 0)
+    screenshot_result = screenshot_run(ip, login, password, 10)
     version_result = version_run(ip, login, password)
     elapsed = round(time.time() - start_ts, 2)
+    SeendText_stop = SeendText(ip, login, password, "Автотест завершён.", 10)
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     
     return {
+        'Сообщение': SeendText_start,
         'Info': version_result,
         'screenshot': screenshot_result,
         'Время выполнения (сек)': elapsed,
         'Текущее время': current_time,
+        'Сообщение': SeendText_stop,
     }
 
 
