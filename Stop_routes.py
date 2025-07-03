@@ -2,12 +2,25 @@ from fastapi import APIRouter, BackgroundTasks
 from fastapi.responses import JSONResponse
 import multiprocessing
 from typing import Optional, Callable
-
+import progTest.Send_Text as SendText
+import re
 router = APIRouter()
 
 _process: Optional[multiprocessing.Process] = None
 _last_result: Optional[str] = None
 
+def parse_config_file(filepath="config.txt"):
+    devices = []
+    pattern = r"IP_CAMERA=(?P<ip>[\d.]+):\d+\s+login=(?P<login>\S+)\s+password=(?P<password>\S+)"
+    with open(filepath, "r", encoding="utf-8") as f:
+        for line in f:
+            match = re.search(pattern, line.strip())
+            if match:
+                ip = match.group("ip")
+                login = match.group("login")
+                password = match.group("password")
+                devices.append((ip, login, password))
+    return devices
 
 def _run_target(func: Callable[[], str]):
     global _last_result
@@ -35,8 +48,16 @@ async def run_mode(mode: str, background_tasks: BackgroundTasks):
     return JSONResponse({'status': 'started', 'mode': mode})
 
 
-@router.post('/stop')
 async def stop_run():
+    devices = parse_config_file()
+
+    # Отправка текста на каждую камеру
+    for ip, login, password in devices:
+        try:
+            SendText(ip, login, password, "Принудительное завершение", 10)
+        except Exception as e:
+            print(f"[WARNING] Не удалось отправить сообщение на {ip}: {e}")
+
     global _process
     if _process and _process.is_alive():
         _process.terminate()
