@@ -1,9 +1,10 @@
 import os
 from yandex_cloud_ml_sdk import YCloudML
 import re
+import passe
 # Укажи свой IAM-токен или API-ключ и folder_id от Yandex Cloud
-YANDEX_API_TOKEN = ''  # TODO: заменить на твой токен
-YANDEX_FOLDER_ID = ''         # TODO: заменить на свой folder_id
+YANDEX_API_TOKEN = 'passe.YANDEX_API_TOKEN'  # TODO: заменить на твой токен
+YANDEX_FOLDER_ID = 'passe.YANDEX_FOLDER_ID'         # TODO: заменить на свой folder_id
 
 
 # ⚙️ Инициализация SDK и модели

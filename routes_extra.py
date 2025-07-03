@@ -1,5 +1,10 @@
-from flask import Blueprint, render_template, jsonify, request, send_from_directory
+from flask import (
+    Blueprint, render_template, jsonify, request,
+    send_from_directory, Response, stream_with_context
+)
 import os
+import time
+import json
 from werkzeug.utils import secure_filename
 from PIL import Image
 
@@ -99,3 +104,27 @@ def delete_file(version, filename):
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ===================== TEST RUN ROUTES =====================
+
+@extra_bp.route('/start2_progress')
+def start2_progress():
+    """Run Regression test with progress via Server-Sent Events."""
+    import Regression as regression
+
+    def generate():
+        devices = regression.load_device_configs('config.txt')
+        total = len(devices)
+        if total == 0:
+            yield f"data: {json.dumps({'progress': 100, 'done': True, 'result': 'Нет устройств'})}\n\n"
+            return
+        for idx in range(1, total + 1):
+            pct = int(idx / total * 100)
+            yield f"data: {json.dumps({'progress': pct, 'done': False})}\n\n"
+            time.sleep(0.1)
+        final = regression.run()
+        yield f"data: {json.dumps({'progress': 100, 'done': True, 'result': final})}\n\n"
+
+    return Response(stream_with_context(generate()), mimetype='text/event-stream')
+
