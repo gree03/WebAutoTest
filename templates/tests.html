@@ -4,7 +4,10 @@
 
   <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:1rem;">
     <div id="tests-list">Загрузка...</div>
-    <button id="runTestsBtn">Запустить</button>
+    <div>
+      <button id="runTestsBtn">Запустить</button>
+      <button id="stopTestsBtn" style="margin-left:20px;" disabled>СТОП</button>
+    </div>
   </div>
 
   <div id="timer" style="font-weight:bold; margin-bottom:1rem;">00:00</div>
@@ -20,6 +23,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     const listEl = document.getElementById('tests-list');
     const btn = document.getElementById('runTestsBtn');
+    const stopBtn = document.getElementById('stopTestsBtn');
     const outputEl = document.getElementById('testsOutput');
     const progressBar = document.getElementById('progressBar');
     const timerEl = document.getElementById('timer');
@@ -47,6 +51,8 @@
         listEl.innerHTML = data.tests.map(t => `<label style="display:block;"><input type="checkbox" value="${t}"> ${t}</label>`).join('');
       });
 
+    let currentController;
+
     btn.addEventListener('click', () => {
       const selected = Array.from(listEl.querySelectorAll('input:checked')).map(el => el.value);
       if (selected.length === 0) {
@@ -56,21 +62,39 @@
       progressBar.value = 0;
       outputEl.textContent = 'Запуск...';
       startTimer();
+      stopBtn.disabled = false;
+      btn.disabled = true;
+      currentController = new AbortController();
       fetch('/api/tests/run', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({tests: selected})
+        body: JSON.stringify({tests: selected}),
+        signal: currentController.signal
       })
         .then(r => r.json())
         .then(data => {
           progressBar.value = 100;
           stopTimer();
           outputEl.textContent = data.result;
+          btn.disabled = false;
+          stopBtn.disabled = true;
         })
         .catch(() => {
           stopTimer();
           outputEl.textContent = 'Ошибка запуска';
+          btn.disabled = false;
+          stopBtn.disabled = true;
         });
+    });
+
+    stopBtn.addEventListener('click', () => {
+      fetch('/stop', {method: 'POST'});
+      if (currentController) currentController.abort();
+      stopTimer();
+      progressBar.value = 0;
+      stopBtn.disabled = true;
+      btn.disabled = false;
+      outputEl.textContent += '\nОстановлено';
     });
   });
   </script>

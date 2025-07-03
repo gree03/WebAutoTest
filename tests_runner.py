@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 import importlib
 from typing import Dict, List
-import acceptance
+import Regression as config_source
 
 
 def _discover_tests() -> Dict[str, tuple]:
@@ -42,7 +42,7 @@ def list_tests() -> List[str]:
 
 
 def run_selected_tests(selected: List[str]) -> str:
-    devices = acceptance.load_device_configs('config.txt')
+    devices = config_source.load_device_configs('config.txt')
     if not devices:
         return 'Нет устройств в config.txt'
 

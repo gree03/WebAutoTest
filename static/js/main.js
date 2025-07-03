@@ -2,7 +2,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const output      = document.getElementById('output');
   const progressBar = document.getElementById('progressBar');
   const timerEl     = document.getElementById('timer');
+  const stopBtn     = document.getElementById('stopBtn');
   let timerInterval;
+  let currentEvt;
 
   function startTimer() {
     const start = Date.now();
@@ -31,8 +33,10 @@ document.addEventListener('DOMContentLoaded', () => {
       progressBar.value = 0;
       output.textContent = '';
       startTimer();
+      if (stopBtn) stopBtn.disabled = false;
 
       const evt1 = new EventSource('/start1_progress');
+      currentEvt = evt1;
       evt1.onmessage = e => {
         const msg = JSON.parse(e.data);
         if (msg.progress !== undefined) {
@@ -41,12 +45,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (msg.done) {
           output.textContent = msg.result;
           stopTimer();
+          if (stopBtn) stopBtn.disabled = true;
           evt1.close();
         }
       };
       evt1.onerror = () => {
         output.textContent = 'Ошибка соединения Старт 1.';
         stopTimer();
+        if (stopBtn) stopBtn.disabled = true;
         evt1.close();
       };
     });
@@ -59,8 +65,10 @@ document.addEventListener('DOMContentLoaded', () => {
       progressBar.value = 0;
       output.textContent = '';
       startTimer();
+      if (stopBtn) stopBtn.disabled = false;
 
       const evt2 = new EventSource('/start2_progress');
+      currentEvt = evt2;
       evt2.onmessage = e => {
         const msg = JSON.parse(e.data);
         if (msg.progress !== undefined) {
@@ -69,12 +77,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (msg.done) {
           output.textContent = msg.result;
           stopTimer();
+          if (stopBtn) stopBtn.disabled = true;
           evt2.close();
         }
       };
       evt2.onerror = () => {
         output.textContent = 'Ошибка соединения Старт 2.';
         stopTimer();
+        if (stopBtn) stopBtn.disabled = true;
         evt2.close();
       };
     });
@@ -87,8 +97,10 @@ if (start3Btn) {
     progressBar.value = 0;
     output.textContent = '';
     startTimer();
+    if (stopBtn) stopBtn.disabled = false;
 
     const evt3 = new EventSource('/start3_progress');
+    currentEvt = evt3;
     evt3.onmessage = e => {
       const msg = JSON.parse(e.data);
       if (msg.progress !== undefined) {
@@ -97,16 +109,29 @@ if (start3Btn) {
       if (msg.done) {
         output.textContent = msg.result;
         stopTimer();
+        if (stopBtn) stopBtn.disabled = true;
         evt3.close();
       }
     };
     evt3.onerror = () => {
       output.textContent = 'Ошибка соединения Старт 3.';
       stopTimer();
+      if (stopBtn) stopBtn.disabled = true;
       evt3.close();
     };
   });
 }
+
+ if (stopBtn) {
+   stopBtn.addEventListener('click', () => {
+     fetch('/stop', {method: 'POST'});
+     if (currentEvt) currentEvt.close();
+     stopTimer();
+     progressBar.value = 0;
+     stopBtn.disabled = true;
+     output.textContent += '\nОстановлено';
+   });
+ }
 
   // ================= CONFIG EDITOR =================
   const configDataEl = document.getElementById('config-data');

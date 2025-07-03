@@ -3,9 +3,10 @@ import os
 import time
 import multiprocessing
 from datetime import datetime
-from progTest.screenshot import run as screenshot_run
-from progTest.ParsProshivka import get_device_info as version_run
-# import progTest.my_task  # пример для расширения обработчиков
+import importlib
+from tests_runner import _discover_tests
+
+TEST_MAP = _discover_tests()
 
 
 def load_device_configs(path='config.txt'):
@@ -34,30 +35,26 @@ def load_device_configs(path='config.txt'):
 
 
 def handle_one(cfg):
-    """
-    Обрабатывает один блок конфигурации и возвращает результат.
-    Возвращает словарь:
-      - 'Info': данные прошивки
-      - 'screenshot': True/False
-      - 'Время выполнения (сек)': длительность работы
-      - 'Текущее время': метка окончания обработки
-    """
+    """Выполняет все тесты из ``progTest`` для одного устройства."""
     ip = cfg.get('IP_CAMERA')
     login = cfg.get('LOGIN')
     password = cfg.get('PASSWORD')
 
     start_ts = time.time()
-    screenshot_result = screenshot_run(ip, login, password)
-    version_result = version_run(ip, login, password)
+    results = {}
+    for name, mod in TEST_MAP.items():
+        module = importlib.import_module(mod[0])
+        func = getattr(module, mod[1])
+        try:
+            results[name] = func(ip, login, password)
+        except Exception as e:
+            results[name] = f'Ошибка: {e}'
+
     elapsed = round(time.time() - start_ts, 2)
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    
-    return {
-        'Info': version_result,
-        'screenshot': screenshot_result,
-        'Время выполнения (сек)': elapsed,
-        'Текущее время': current_time,
-    }
+    results['Время выполнения (сек)'] = elapsed
+    results['Текущее время'] = current_time
+    return results
 
 
 def run():
