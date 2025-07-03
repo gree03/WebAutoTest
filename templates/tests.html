@@ -1,10 +1,14 @@
 {% extends 'base.html' %}
 {% block content %}
   <h2>Автотесты</h2>
-
+ <p>Для выбора определённого домофона перейдите в раздел "Конфиг".
+  </p>
   <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:1rem;">
     <div id="tests-list">Загрузка...</div>
-    <button id="runTestsBtn">Запустить</button>
+    <div>
+      <button id="runTestsBtn">Запустить</button>
+      <button id="stopTestsBtn" style="margin-left:20px;" disabled>СТОП</button>
+    </div>
   </div>
 
   <div id="timer" style="font-weight:bold; margin-bottom:1rem;">00:00</div>
@@ -13,17 +17,25 @@
     <label for="progressBar"></label>
     <progress id="progressBar" max="100" value="0" style="width:100%"></progress>
   </div>
-
-  <div id="testsOutput" style="white-space: pre-line; margin-top:1rem;"></div>
-
+  <div>
+  <div id="testsOutput" style="white-space: pre-line; margin-top:1rem;  margin-top: 1rem;
+  padding: 1rem;
+  background: #e9ecef;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  color: #212529;
+  white-space: pre-wrap;"></div>
+  </div>
   <script>
   document.addEventListener('DOMContentLoaded', () => {
     const listEl = document.getElementById('tests-list');
     const btn = document.getElementById('runTestsBtn');
+    const stopBtn = document.getElementById('stopTestsBtn');
     const outputEl = document.getElementById('testsOutput');
     const progressBar = document.getElementById('progressBar');
     const timerEl = document.getElementById('timer');
     let timerInterval;
+    let abortCtrl = null;
 
     function startTimer() {
       const start = Date.now();
@@ -41,6 +53,16 @@
       clearInterval(timerInterval);
     }
 
+    if (stopBtn) {
+      stopBtn.addEventListener('click', () => {
+        if (abortCtrl) {
+          abortCtrl.abort();
+          fetch('/stop', {method:'POST'}).catch(() => {});
+        }
+        stopBtn.disabled = true;
+      });
+    }
+
     fetch('/api/tests')
       .then(r => r.json())
       .then(data => {
@@ -56,20 +78,27 @@
       progressBar.value = 0;
       outputEl.textContent = 'Запуск...';
       startTimer();
+      abortCtrl = new AbortController();
+      if (stopBtn) stopBtn.disabled = false;
       fetch('/api/tests/run', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({tests: selected})
+        body: JSON.stringify({tests: selected}),
+        signal: abortCtrl.signal
       })
         .then(r => r.json())
         .then(data => {
           progressBar.value = 100;
           stopTimer();
           outputEl.textContent = data.result;
+          abortCtrl = null;
+          if (stopBtn) stopBtn.disabled = true;
         })
         .catch(() => {
           stopTimer();
           outputEl.textContent = 'Ошибка запуска';
+          abortCtrl = null;
+          if (stopBtn) stopBtn.disabled = true;
         });
     });
   });

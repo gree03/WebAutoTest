@@ -3,6 +3,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const progressBar = document.getElementById('progressBar');
   const timerEl     = document.getElementById('timer');
   let timerInterval;
+  let currentEvt = null;
+  const stopBtn = document.getElementById('stopBtn');
+
+  if (stopBtn) {
+    stopBtn.addEventListener('click', () => {
+      if (currentEvt) {
+        fetch('/stop', {method: 'POST'}).catch(() => {});
+        currentEvt.close();
+        currentEvt = null;
+        stopTimer();
+      }
+      stopBtn.disabled = true;
+    });
+  }
 
   function startTimer() {
     const start = Date.now();
@@ -33,6 +47,8 @@ document.addEventListener('DOMContentLoaded', () => {
       startTimer();
 
       const evt1 = new EventSource('/start1_progress');
+      currentEvt = evt1;
+      if (stopBtn) stopBtn.disabled = false;
       evt1.onmessage = e => {
         const msg = JSON.parse(e.data);
         if (msg.progress !== undefined) {
@@ -42,12 +58,16 @@ document.addEventListener('DOMContentLoaded', () => {
           output.textContent = msg.result;
           stopTimer();
           evt1.close();
+          currentEvt = null;
+          if (stopBtn) stopBtn.disabled = true;
         }
       };
       evt1.onerror = () => {
         output.textContent = 'Ошибка соединения Старт 1.';
         stopTimer();
         evt1.close();
+        currentEvt = null;
+        if (stopBtn) stopBtn.disabled = true;
       };
     });
   }
@@ -61,6 +81,8 @@ document.addEventListener('DOMContentLoaded', () => {
       startTimer();
 
       const evt2 = new EventSource('/start2_progress');
+      currentEvt = evt2;
+      if (stopBtn) stopBtn.disabled = false;
       evt2.onmessage = e => {
         const msg = JSON.parse(e.data);
         if (msg.progress !== undefined) {
@@ -70,12 +92,16 @@ document.addEventListener('DOMContentLoaded', () => {
           output.textContent = msg.result;
           stopTimer();
           evt2.close();
+          currentEvt = null;
+          if (stopBtn) stopBtn.disabled = true;
         }
       };
       evt2.onerror = () => {
         output.textContent = 'Ошибка соединения Старт 2.';
         stopTimer();
         evt2.close();
+        currentEvt = null;
+        if (stopBtn) stopBtn.disabled = true;
       };
     });
   }
@@ -89,6 +115,8 @@ if (start3Btn) {
     startTimer();
 
     const evt3 = new EventSource('/start3_progress');
+    currentEvt = evt3;
+    if (stopBtn) stopBtn.disabled = false;
     evt3.onmessage = e => {
       const msg = JSON.parse(e.data);
       if (msg.progress !== undefined) {
@@ -98,12 +126,16 @@ if (start3Btn) {
         output.textContent = msg.result;
         stopTimer();
         evt3.close();
+        currentEvt = null;
+        if (stopBtn) stopBtn.disabled = true;
       }
     };
     evt3.onerror = () => {
       output.textContent = 'Ошибка соединения Старт 3.';
       stopTimer();
       evt3.close();
+      currentEvt = null;
+      if (stopBtn) stopBtn.disabled = true;
     };
   });
 }

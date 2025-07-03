@@ -11,7 +11,6 @@ import zipfile
 from werkzeug.utils import secure_filename
 from io import BytesIO
 import acceptance as start
-import test_firmware as start_test_firmware
 from routes_extra import extra_bp
 from datetime import datetime
 
@@ -37,12 +36,7 @@ def start1_view():
     print(f"[{datetime.now()}] Acceptance тест завершен")
     return jsonify(result=result)
 
-@app.route('/start3')
-def start3_view():
-    print(f"[{datetime.now()}] Запуск Firmware Upload теста через /start3")
-    result = start_test_firmware.run()
-    print(f"[{datetime.now()}] Firmware Upload тест завершен")
-    return jsonify(result=result)
+
 
 
 @app.route('/start1_progress')
@@ -62,22 +56,7 @@ def start1_progress():
         yield f"data: {json.dumps({'progress':100,'done':True,'result':final})}\n\n"
     return Response(stream_with_context(generate()), mimetype='text/event-stream')
 
-@app.route('/start3_progress')
-def start3_progress():
-    def generate():
-        devices, _ = start_test_firmware.load_firmware_config('config.txt')  # Извлекаем только devices
-        total = len(devices)
-        if total == 0:
-            yield f"data: {json.dumps({'progress':100,'done':True,'result':'Нет устройств'})}\n\n"
-            return
-        # Имитируем прогресс, так как run() выполнит тест
-        for idx in range(1, total + 1):
-            pct = int(idx / total * 100)
-            yield f"data: {json.dumps({'progress':pct,'done':False})}\n\n"
-            time.sleep(0.1)
-        final = start_test_firmware.run()  # Выполняем тест один раз
-        yield f"data: {json.dumps({'progress':100,'done':True,'result':final})}\n\n"
-    return Response(stream_with_context(generate()), mimetype='text/event-stream')
+
 
 @app.route('/config', methods=['GET', 'POST'])
 def config_page():
