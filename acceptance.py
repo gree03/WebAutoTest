@@ -1,90 +1,87 @@
-# acceptance.py
+# start2.py
 import os
 import time
 import multiprocessing
 from datetime import datetime
 from progTest.screenshot import run as screenshot_run
 from progTest.ParsProshivka import get_device_info as version_run
-from progTest.Send_Text import run as SeendText
 from ping_utils import filter_reachable_devices
+from progTest.Send_Text import run as SeendText
+from progTest.initial_launch import run as initalLaunch
+from progTest.ResetSeting import run as ResetSeting
+# import progTest.my_task  # пример для расширения обработчиков
+
 
 def load_device_configs(path='config.txt'):
     """
     Считывает config.txt и возвращает список словарей с параметрами.
-    Блоки разделяются строками, состоящими хотя бы из '_'.
+    Блоки разделяются строками из '_'.
     """
     devices = []
     current = {}
-    try:
-        with open(path, 'r', encoding='utf-8') as f:
-            for raw in f:
-                line = raw.strip()
-                if line.startswith('_'):
-                    if current:
-                        # Устанавливаем MAX_SCREENSHOTS по умолчанию, если не указан
-                        if 'MAX_SCREENSHOTS' not in current:
-                            current['MAX_SCREENSHOTS'] = '10000'
-                        devices.append(current)
-                        current = {}
-                    continue
-                if not line or line.startswith('#'):
-                    continue
-                if '=' in line:
-                    key, val = line.split('=', 1)
-                    current[key.strip()] = val.strip()
-            if current:
-                if 'MAX_SCREENSHOTS' not in current:
-                    current['MAX_SCREENSHOTS'] = '10000'
-                devices.append(current)
-    except FileNotFoundError:
-        print(f"[{datetime.now()}] Ошибка: Файл {path} не найден")
+    with open(path, 'r', encoding='utf-8') as f:
+        for raw in f:
+            line = raw.strip()
+            if line.startswith('_'):
+                if current:
+                    devices.append(current)
+                    current = {}
+                continue
+            if not line or line.startswith('#'):
+                continue
+            if '=' in line:
+                key, val = line.split('=', 1)
+                current[key.strip()] = val.strip()
+        if current:
+            devices.append(current)
     return devices
 
 
 def handle_one(cfg):
-    ip = cfg.get('IP_CAMERA', '')
-    login = cfg.get('LOGIN', '')
-    password = cfg.get('PASSWORD', '')
-    try:
-        max_screenshots = int(cfg.get('MAX_SCREENSHOTS', '10000'))
-        if max_screenshots <= 0:
-            raise ValueError("MAX_SCREENSHOTS должен быть положительным")
-    except (ValueError, TypeError) as e:
-        max_screenshots = 10000
-        print(f"[{datetime.now()}] Ошибка: Неверное значение MAX_SCREENSHOTS для IP {ip} ({str(e)}), используется 10000")
-
-    print(f"[{datetime.now()}] Начало обработки устройства IP {ip} (MAX_SCREENSHOTS={max_screenshots})")
+    """
+    Обрабатывает один блок конфигурации и возвращает результат.
+    Возвращает словарь:
+      - 'Info': данные прошивки
+      - 'screenshot': True/False
+      - 'Время выполнения (сек)': длительность работы
+      - 'Текущее время': метка окончания обработки
+    """
+    ip = cfg.get('IP_CAMERA')
+    login = cfg.get('LOGIN')
+    password = cfg.get('PASSWORD')
+    MAX_SCREENSHOTS = cfg.get('MAX_SCREENSHOTS')
+    reset = cfg.get('RESET')
+    
     start_ts = time.time()
+    initalLaunch_start = initalLaunch(ip, login, password)
     SeendText_start = SeendText(ip, login, password, "Автотест запущен!", 0)
-    screenshot_result = screenshot_run(ip, login, password, max_attempts=max_screenshots)
+    screenshot_result = screenshot_run(ip, login, password, int(MAX_SCREENSHOTS))
     version_result = version_run(ip, login, password)
-    
-
     elapsed = round(time.time() - start_ts, 2)
+    SeendText_stop = SeendText(ip, login, password, "Автотест завершён.", 30)
+    ResetSeting_resultate = ResetSeting(ip, login, password, int(reset))
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    SeendText_stop = SeendText(ip, login, password, "Автотест завершён.", 10)
     
-
-    print(f"[{datetime.now()}] Завершение обработки IP {ip}: Время {elapsed} сек, Скриншоты: {screenshot_result['success_rate']}")
-
     return {
-        'Отправка сообщение': SeendText_start,
+        'Применение конфигурациия': initalLaunch_start,
+        'Сообщение': SeendText_start,
         'Info': version_result,
-        'screenshot': screenshot_result['success'],
-        'screenshot_success_rate': screenshot_result['success_rate'],
-        'screenshot_attempts': screenshot_result['attempts'],
-        'screenshot_successes': screenshot_result['successes'],
+        'screenshot': screenshot_result,
         'Время выполнения (сек)': elapsed,
+        'Сброс': ResetSeting_resultate,
         'Текущее время': current_time,
-        'Отправка сообщение' : SeendText_stop,
+        'Сообщение': SeendText_stop,
+        
     }
 
 
 def run():
-    print(f"[{datetime.now()}] Запуск теста Acceptance")
+    """
+    Параллельно обрабатывает все устройства из config.txt и возвращает
+    лог в виде строки. Сохраняет файл под именем Regression_<timestamp>.txt
+    """
     devices = load_device_configs()
     if not devices:
-        print(f"[{datetime.now()}] Нет устройств в config.txt")
         return "Нет устройств в config.txt"
 
     devices, warnings = filter_reachable_devices(devices)
@@ -105,18 +102,18 @@ def run():
 
     log_text = "\n".join(lines).strip()
 
+    # Сохраняем лог в папку logs
     log_dir = 'logs'
     os.makedirs(log_dir, exist_ok=True)
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    log_filename = f"logacceptance_{timestamp}.txt"
+    log_filename = f"Regression_{timestamp}.txt"
     log_path = os.path.join(log_dir, log_filename)
     with open(log_path, 'w', encoding='utf-8') as log_file:
         log_file.write(log_text)
 
-    print(f"[{datetime.now()}] Тест завершен, лог сохранён: {log_path}")
     return log_text
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     print(run())
 

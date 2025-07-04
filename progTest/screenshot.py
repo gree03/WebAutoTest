@@ -84,10 +84,8 @@ def run(ip, username, password, max_attempts=10, progress_callback=None):
     success = success_rate >= 90.0
 
     print(f"[{datetime.now()}] Завершение теста для IP {ip}: Попыток: {attempts_made}, Успехов: {successes}, Успех: {success_rate}%")
-    return {
-        'success': success,
-        'success_rate': f"{success_rate}%",
-        'attempts': attempts_made,
-        'successes': successes,
-        'error_message': last_error if not success else ""
-    }
+    return ("Завершение теста для IP " + ip +
+        ": Попыток: " + str(attempts_made) +
+        ", Успехов: " + str(successes) +
+        ", Успех: " + str(success_rate) + "%")
+

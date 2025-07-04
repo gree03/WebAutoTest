@@ -1,3 +1,14 @@
+"""
+    parse_config_file() — парсит config.txt, извлекая IP, логин и пароль всех камер.
+
+    _run_target(func) — запускает функцию теста (run) и сохраняет результат в глобальную переменную _last_result.
+
+    run_mode() — POST-эндпоинт /run/{mode} запускает regression.run или acceptance.run в отдельном процессе. Если тест уже запущен — возвращает busy.
+
+    stop_run() — останавливает активный процесс, отправляет текст "Принудительное завершение" на каждую камеру через SendText, завершает процесс и возвращает результат.
+
+Назначение: обеспечить безопасный запуск тестов через HTTP и возможность их остановки с уведомлением устройств.
+"""
 from fastapi import APIRouter, BackgroundTasks
 from fastapi.responses import JSONResponse
 import multiprocessing
