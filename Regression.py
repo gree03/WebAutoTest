@@ -9,6 +9,7 @@ from ping_utils import filter_reachable_devices
 from progTest.Send_Text import run as SeendText
 from progTest.initial_launch import run as initalLaunch
 from progTest.ResetSeting import run as ResetSeting
+from syslog_server import start_syslog_server, stop_syslog_server
 # import progTest.my_task  # пример для расширения обработчиков
 
 
@@ -80,38 +81,42 @@ def run():
     Параллельно обрабатывает все устройства из config.txt и возвращает
     лог в виде строки. Сохраняет файл под именем Regression_<timestamp>.txt
     """
-    devices = load_device_configs()
-    if not devices:
-        return "Нет устройств в config.txt"
+    start_syslog_server()
+    try:
+        devices = load_device_configs()
+        if not devices:
+            return "Нет устройств в config.txt"
 
-    devices, warnings = filter_reachable_devices(devices)
-    if not devices:
-        warnings.append("\u26a0\ufe0f \"Не удалось подключиться ни к одному домофону. Тестирование отменено.\"")
-        return "\n".join(warnings)
+        devices, warnings = filter_reachable_devices(devices)
+        if not devices:
+            warnings.append("\u26a0\ufe0f \"Не удалось подключиться ни к одному домофону. Тестирование отменено.\"")
+            return "\n".join(warnings)
 
-    with multiprocessing.Pool(processes=len(devices)) as pool:
-        outcomes = pool.map(handle_one, devices)
+        with multiprocessing.Pool(processes=len(devices)) as pool:
+            outcomes = pool.map(handle_one, devices)
 
-    lines = list(warnings)
-    for cfg, result_dict in zip(devices, outcomes):
-        cfg_line = " ".join(f"{k}={v}" for k, v in cfg.items())
-        lines.append(cfg_line)
-        for name, value in result_dict.items():
-            lines.append(f"{name}: {value}")
-        lines.append("")
+        lines = list(warnings)
+        for cfg, result_dict in zip(devices, outcomes):
+            cfg_line = " ".join(f"{k}={v}" for k, v in cfg.items())
+            lines.append(cfg_line)
+            for name, value in result_dict.items():
+                lines.append(f"{name}: {value}")
+            lines.append("")
 
-    log_text = "\n".join(lines).strip()
+        log_text = "\n".join(lines).strip()
 
-    # Сохраняем лог в папку logs
-    log_dir = 'logs'
-    os.makedirs(log_dir, exist_ok=True)
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    log_filename = f"Regression_{timestamp}.txt"
-    log_path = os.path.join(log_dir, log_filename)
-    with open(log_path, 'w', encoding='utf-8') as log_file:
-        log_file.write(log_text)
+        # Сохраняем лог в папку logs
+        log_dir = 'logs'
+        os.makedirs(log_dir, exist_ok=True)
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        log_filename = f"Regression_{timestamp}.txt"
+        log_path = os.path.join(log_dir, log_filename)
+        with open(log_path, 'w', encoding='utf-8') as log_file:
+            log_file.write(log_text)
 
-    return log_text
+        return log_text
+    finally:
+        stop_syslog_server()
 
 
 if __name__ == '__main__':

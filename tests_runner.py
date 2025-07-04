@@ -14,6 +14,7 @@ import importlib
 from typing import Dict, List
 import Regression as regression
 from ping_utils import filter_reachable_devices
+from syslog_server import start_syslog_server, stop_syslog_server
 
 
 def _discover_tests() -> Dict[str, tuple]:
@@ -53,58 +54,61 @@ def list_tests() -> List[str]:
 
 
 def run_selected_tests(selected: List[str]) -> str:
-    devices = regression.load_device_configs('config.txt')
-    if not devices:
-        return 'Нет устройств в config.txt'
+    start_syslog_server()
+    try:
+        devices = regression.load_device_configs('config.txt')
+        if not devices:
+            return 'Нет устройств в config.txt'
 
-    devices, warnings = filter_reachable_devices(devices)
-    if not devices:
-        warnings.append("\u26a0\ufe0f \"Не удалось подключиться ни к одному домофону. Тестирование отменено.\"")
-        return "\n".join(warnings)
+        devices, warnings = filter_reachable_devices(devices)
+        if not devices:
+            warnings.append("\u26a0\ufe0f \"Не удалось подключиться ни к одному домофону. Тестирование отменено.\"")
+            return "\n".join(warnings)
 
-    lines: List[str] = list(warnings)
-    from io import StringIO
-    from contextlib import redirect_stdout
+        lines: List[str] = list(warnings)
+        from io import StringIO
+        from contextlib import redirect_stdout
 
-    buf = StringIO()
-    with redirect_stdout(buf):
-        for cfg in devices:
-            ip = cfg.get('IP_CAMERA', '')
-            login = cfg.get('LOGIN', '')
-            password = cfg.get('PASSWORD', '')
-            lines.append(' '.join(f'{k}={v}' for k, v in cfg.items()))
-            for name in selected:
-                mod_info = TEST_MAP.get(name)
-                if not mod_info:
-                    lines.append(f'{name}: неизвестный тест')
-                    continue
-                module = importlib.import_module(mod_info[0])
-                func = getattr(module, mod_info[1])
-                try:
-                    result = func(ip, login, password)
-                except Exception as e:
-                    result = f'Ошибка: {e}'
-                lines.append(f'{name}: {result}')
-            lines.append('')
+        buf = StringIO()
+        with redirect_stdout(buf):
+            for cfg in devices:
+                ip = cfg.get('IP_CAMERA', '')
+                login = cfg.get('LOGIN', '')
+                password = cfg.get('PASSWORD', '')
+                lines.append(' '.join(f'{k}={v}' for k, v in cfg.items()))
+                for name in selected:
+                    mod_info = TEST_MAP.get(name)
+                    if not mod_info:
+                        lines.append(f'{name}: неизвестный тест')
+                        continue
+                    module = importlib.import_module(mod_info[0])
+                    func = getattr(module, mod_info[1])
+                    try:
+                        result = func(ip, login, password)
+                    except Exception as e:
+                        result = f'Ошибка: {e}'
+                    lines.append(f'{name}: {result}')
+                lines.append('')
 
-    captured = buf.getvalue()
+        captured = buf.getvalue()
 
-    log_dir = 'logs'
-    os.makedirs(log_dir, exist_ok=True)
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    log_file = os.path.join(log_dir, f'selected_{timestamp}.txt')
-    with open(log_file, 'w', encoding='utf-8') as f:
-        f.write(captured)
-        f.write('\n')
-        f.write('\n'.join(lines).strip())
+        log_dir = 'logs'
+        os.makedirs(log_dir, exist_ok=True)
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        log_file = os.path.join(log_dir, f'selected_{timestamp}.txt')
+        with open(log_file, 'w', encoding='utf-8') as f:
+            f.write(captured)
+            f.write('\n')
+            f.write('\n'.join(lines).strip())
 
-    output = (captured + '\n' + '\n'.join(lines)).strip()
+        output = (captured + '\n' + '\n'.join(lines)).strip()
 
-    # Убираем технические GET/POST запросы из вывода
-    clean = []
-    for ln in output.splitlines():
-        if 'GET /' in ln or 'POST /' in ln:
-            continue
-        clean.append(ln)
-    return '\n'.join(clean)
+        clean = []
+        for ln in output.splitlines():
+            if 'GET /' in ln or 'POST /' in ln:
+                continue
+            clean.append(ln)
+        return '\n'.join(clean)
+    finally:
+        stop_syslog_server()
 
