@@ -83,9 +83,8 @@ def run(ip, username, password, max_attempts=10, progress_callback=None):
     success_rate = round((successes / attempts_made) * 100, 2) if attempts_made > 0 else 0.0
     success = success_rate >= 90.0
 
-    print(f"[{datetime.now()}] Завершение теста для IP {ip}: Попыток: {attempts_made}, Успехов: {successes}, Успех: {success_rate}%")
-    return ("Завершение теста для IP " + ip +
-        ": Попыток: " + str(attempts_made) +
+    print(f"[{datetime.now()}] Попыток: {attempts_made}, Успехов: {successes}, Успех: {success_rate}%")
+    return (": Попыток: " + str(attempts_made) +
         ", Успехов: " + str(successes) +
         ", Успех: " + str(success_rate) + "%")
 

@@ -10,7 +10,7 @@ def run(ip: str, login: str, password: str, reset: int = 0) -> str:
     if reset == 1:
         return runse(ip, login, password)
     elif reset == 0:
-        return "Сброс заводским отключен"
+        return "Сброс к заводским настройкам отключён. Чтобы включить — в конфиге установи переменной `RESET` значение `1`."
     else:
         return ("Неверное значение параметра RESET: "
                 "должно быть 1 (сброс) или 0 (не сбрасывать). "

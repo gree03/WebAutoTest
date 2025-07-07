@@ -9,6 +9,7 @@ from ping_utils import filter_reachable_devices
 from progTest.Send_Text import run as SeendText
 from progTest.initial_launch import run as initalLaunch
 from progTest.ResetSeting import run as ResetSeting
+from progTest.OpenDoor import run as OpenDoor
 from syslog_server import start_syslog_server, stop_syslog_server
 # import progTest.my_task  # пример для расширения обработчиков
 
@@ -52,12 +53,14 @@ def handle_one(cfg):
     password = cfg.get('PASSWORD')
     MAX_SCREENSHOTS = cfg.get('MAX_SCREENSHOTS')
     reset = cfg.get('RESET')
-    
+    AttemptDoorOpen = cfg.get("AttemptDoorOpen")
+
     start_ts = time.time()
     initalLaunch_start = initalLaunch(ip, login, password)
     SeendText_start = SeendText(ip, login, password, "Автотест запущен!", 0)
     screenshot_result = screenshot_run(ip, login, password, int(MAX_SCREENSHOTS))
     version_result = version_run(ip, login, password)
+    OpenDoor_result = OpenDoor(ip, login, password, int(AttemptDoorOpen))
     elapsed = round(time.time() - start_ts, 2)
     SeendText_stop = SeendText(ip, login, password, "Автотест завершён.", 10)
     ResetSeting_resultate = ResetSeting(ip, login, password, int(reset))
@@ -66,8 +69,9 @@ def handle_one(cfg):
     return {
         'Применение конфигурациия': initalLaunch_start,
         'Сообщение': SeendText_start,
-        'Info': version_result,
-        'screenshot': screenshot_result,
+        'Информация об устройстве': version_result,
+        'Открытие двери': OpenDoor_result,
+        'Скриншоты': screenshot_result,
         'Время выполнения (сек)': elapsed,
         'Сброс': ResetSeting_resultate,
         'Текущее время': current_time,
